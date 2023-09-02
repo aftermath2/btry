@@ -29,6 +29,13 @@ func NewClientMock() *ClientMock {
 	return &ClientMock{}
 }
 
+// AddHODLInvoice mock.
+func (c *ClientMock) AddHODLInvoice(ctx context.Context, invoice *lnrpc.PayReq) (string, error) {
+	args := c.Called(ctx, invoice)
+	paymentRequest := args.Get(0).(string)
+	return paymentRequest, args.Error(1)
+}
+
 // AddInvoice mock.
 func (c *ClientMock) AddInvoice(ctx context.Context, amount uint64) (*lnrpc.AddInvoiceResponse, error) {
 	args := c.Called(ctx, amount)
@@ -38,6 +45,12 @@ func (c *ClientMock) AddInvoice(ctx context.Context, amount uint64) (*lnrpc.AddI
 		r0 = v0.(*lnrpc.AddInvoiceResponse)
 	}
 	return r0, args.Error(1)
+}
+
+// CancelInvoice mock.
+func (c *ClientMock) CancelInvoice(ctx context.Context, rHash string) error {
+	args := c.Called(ctx, rHash)
+	return args.Error(0)
 }
 
 // DecodeInvoice mock.
@@ -59,8 +72,8 @@ func (c *ClientMock) LightningAddresses() []string {
 }
 
 // PayInvoice mock.
-func (c *ClientMock) PayInvoice(ctx context.Context, invoice *lnrpc.PayReq, feeSat int64, inflightUpdates bool) (Stream[*lnrpc.Payment], error) {
-	args := c.Called(ctx, invoice, feeSat, inflightUpdates)
+func (c *ClientMock) PayInvoice(ctx context.Context, invoice *lnrpc.PayReq, feeSat int64, cltvLimit int32) (Stream[*lnrpc.Payment], error) {
+	args := c.Called(ctx, invoice, feeSat, cltvLimit)
 	var r0 Stream[*lnrpc.Payment]
 	v0 := args.Get(0)
 	if v0 != nil {
@@ -74,6 +87,12 @@ func (c *ClientMock) RemoteBalance(ctx context.Context) (int64, error) {
 	args := c.Called(ctx)
 	remoteBalance := args.Get(0).(int64)
 	return remoteBalance, args.Error(1)
+}
+
+// SettleInvoice mock.
+func (c *ClientMock) SettleInvoice(ctx context.Context, originalInvoice string) error {
+	args := c.Called(ctx, originalInvoice)
+	return args.Error(0)
 }
 
 // SubscribeChannelEvents mock.

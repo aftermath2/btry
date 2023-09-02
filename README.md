@@ -88,5 +88,5 @@ cd btry
 BTRY uses several RPC methods to perform operations with a Lightning Node, we suggest creating a fine-grained macaroon for it:
 
 ```
-lncli bakemacaroon uri:/lnrpc.Lightning/AddInvoice uri:/lnrpc.Lightning/DecodePayReq uri:/routerrpc.Router/SendPaymentV2 uri:/lnrpc.Lightning/ListChannels uri:/lnrpc.Lightning/SubscribeChannelEvents uri:/lnrpc.Lightning/SubscribeInvoices uri:/routerrpc.Router/TrackPayments
+lncli bakemacaroon uri:/lnrpc.Lightning/AddInvoice uri:/lnrpc.Lightning/DecodePayReq uri:/lnrpc.Lightning/ListChannels uri:/lnrpc.Lightning/LookupInvoice uri:/lnrpc.Lightning/SubscribeChannelEvents uri:/lnrpc.Lightning/SubscribeInvoices uri:/routerrpc.Router/TrackPayments uri:/routerrpc.Router/SendPaymentV2 uri:/invoicesrpc.Invoices/AddHoldInvoice uri:/invoicesrpc.Invoices/CancelInvoice uri:/invoicesrpc.Invoices/SettleInvoice
 ```

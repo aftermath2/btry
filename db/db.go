@@ -16,6 +16,7 @@ import (
 type DB struct {
 	db            *sql.DB
 	Notifications NotificationsStore
+	Battles       BattlesStore
 	Bets          BetsStore
 	Winners       WinnersStore
 }
@@ -44,6 +45,7 @@ func Open(config config.DB) (*DB, error) {
 
 	return &DB{
 		db:            db,
+		Battles:       newBattlesStore(db, logger),
 		Bets:          newBetsStore(db, logger),
 		Notifications: newNotificationsStore(db, logger),
 		Winners:       newWinnersStore(db, logger),
@@ -107,6 +109,22 @@ func BulkInsertValues(rows, values int) string {
 	return strings.Join(list, ",")
 }
 
+func scanRows[T ~uint64 | ~string](rows *sql.Rows) ([]T, error) {
+	var (
+		list []T
+		item T
+	)
+	for rows.Next() {
+		if err := rows.Scan(&item); err != nil {
+			return nil, errors.Wrap(err, "scanning rows")
+		}
+
+		list = append(list, item)
+	}
+
+	return list, nil
+}
+
 const migrations = `
 CREATE TABLE IF NOT EXISTS bets (
 	idx INTEGER PRIMARY KEY CHECK (idx > 0),
@@ -139,4 +157,34 @@ CREATE TABLE IF NOT EXISTS notifications (
 	chat_id INTEGER NOT NULL,
 	service TEXT NOT NULL CHECK (service IN ('telegram')),
 	created_at INTEGER DEFAULT (unixepoch())
+) WITHOUT ROWID;
+
+CREATE TABLE IF NOT EXISTS battles (
+	id INTEGER PRIMARY KEY NOT NULL,
+	amount INTEGER NOT NULL CHECK (amount > 0),
+	status INTEGER DEFAULT 1 CHECK (status IN (1,2,3,4)),
+	number INTEGER,
+	created_at DATETIME DEFAULT (unixepoch())
+);
+
+CREATE TABLE IF NOT EXISTS players (
+	battle_id INTEGER,
+	role INTEGER NOT NULL,
+	public_key VARCHAR(64) NOT NULL,
+	invoice TEXT NOT NULL,
+	number INTEGER NOT NULL CHECK (number >= 0 AND number <= 1000),
+	FOREIGN KEY (battle_id) REFERENCES battles (id) ON DELETE CASCADE
+);
+
+CREATE TRIGGER IF NOT EXISTS battles_ro_columns
+BEFORE UPDATE OF id, amount, initiator_public_key, initiator_invoice, initiator_number ON battles
+BEGIN
+    SELECT raise(abort, 'updating battle read-only fields');
+END;
+
+CREATE TABLE IF NOT EXISTS notifications (
+	public_key VARCHAR(64) PRIMARY KEY,
+	chat_id INTEGER NOT NULL,
+	service TEXT NOT NULL CHECK (service IN ('telegram')),
+	expires_at INTEGER NOT NULL
 ) WITHOUT ROWID;`

@@ -11,6 +11,7 @@ import (
 	"github.com/aftermath2/BTRY/logger"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/pkg/errors"
@@ -33,19 +34,23 @@ type Stream[T any] interface {
 
 // Client represents a Lightning Network node client.
 type Client interface {
+	AddHODLInvoice(ctx context.Context, invoice *lnrpc.PayReq) (string, error)
 	AddInvoice(ctx context.Context, amountSat uint64) (*lnrpc.AddInvoiceResponse, error)
+	CancelInvoice(ctx context.Context, rHash string) error
 	DecodeInvoice(ctx context.Context, invoice string) (*lnrpc.PayReq, error)
-	PayInvoice(ctx context.Context, invoice *lnrpc.PayReq, feeSat int64, inflightUpdates bool) (Stream[*lnrpc.Payment], error)
+	PayInvoice(ctx context.Context, invoice *lnrpc.PayReq, feeSat int64, cltvLimit int32) (Stream[*lnrpc.Payment], error)
 	RemoteBalance(ctx context.Context) (int64, error)
+	SettleInvoice(ctx context.Context, originalInvoice string) error
 	SubscribeChannelEvents(ctx context.Context) (Stream[*lnrpc.ChannelEventUpdate], error)
 	SubscribeInvoices(ctx context.Context) (Stream[*lnrpc.Invoice], error)
 	SubscribePayments(ctx context.Context) (Stream[*lnrpc.Payment], error)
 }
 
 type client struct {
-	ln     lnrpc.LightningClient
-	router routerrpc.RouterClient
-	logger *logger.Logger
+	ln       lnrpc.LightningClient
+	router   routerrpc.RouterClient
+	invoices invoicesrpc.InvoicesClient
+	logger   *logger.Logger
 }
 
 // NewClient returns a new client that communicates with a Lightning node.
@@ -66,9 +71,10 @@ func NewClient(config config.Lightning) (Client, error) {
 	}
 
 	return &client{
-		ln:     lnrpc.NewLightningClient(conn),
-		router: routerrpc.NewRouterClient(conn),
-		logger: logger,
+		ln:       lnrpc.NewLightningClient(conn),
+		router:   routerrpc.NewRouterClient(conn),
+		invoices: invoicesrpc.NewInvoicesClient(conn),
+		logger:   logger,
 	}, nil
 }
 
@@ -121,7 +127,7 @@ func (c *client) PayInvoice(
 	ctx context.Context,
 	invoice *lnrpc.PayReq,
 	feeSat int64,
-	inflightUpdates bool,
+	cltvLimit int32,
 ) (Stream[*lnrpc.Payment], error) {
 	if feeSat < 0 {
 		return nil, errors.New("invalid fee")
@@ -145,8 +151,9 @@ func (c *client) PayInvoice(
 		PaymentAddr:       invoice.PaymentAddr[:],
 		RouteHints:        invoice.RouteHints,
 		MaxParts:          16,
-		NoInflightUpdates: !inflightUpdates,
+		NoInflightUpdates: true,
 		TimePref:          0.5,
+		CltvLimit:         cltvLimit,
 		FinalCltvDelta:    80,
 		TimeoutSeconds:    120,
 	}

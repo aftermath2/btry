@@ -39,6 +39,16 @@ BTRY fee: 0.390625%`,
 If BTRY were to hold prizes indefinitely, the node's ability to send and receive payments would eventually be annulled, since all the liquidity would be locked on the same side of the channels. In other words, local balance would be near 100% and remote balance would be near 0%.`,
 	},
 	{
+		question: "What are battles?",
+		answer: `They are a non-custodial game where two users compete for guessing the number that is closest to a random one. BTRY never takes custody of the funds, it uses HODL contracts and the process is fully verifiable. 
+		
+The first user (initiator) chooses the terms of the contract (number range and bet amount), and the second user (challenger) is the one who accepts the conditions.
+		
+Both users provide an invoice of the same amount and fund the HODL invoice of the opponent. Whoever wins gets the invoice he funded cancelled and the oponent's invoice to him settled. In case of a tie, both HODL invoices are cancelled.
+
+A game is open to join until the HODL invoice expires.`,
+	},
+	{
 		question: "Are on-chain payments supported?",
 		answer: `Not for now. Although we are aware that the Lightning Network is not the best way to send large payments, we expect the pools to be small and therefore we are initially using this layer only.
 

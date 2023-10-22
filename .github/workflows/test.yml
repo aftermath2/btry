@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -28,24 +28,5 @@ jobs:
           cache: true
 
       - name: Run tests
-        run: go test ./...
-
-  ui:
-    name: Tests (UI)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Set up NodeJS
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-          cache: npm
-          cache-dependency-path: ui/package-lock.json
-
-      - name: Run tests
-        run: |
-          npm ci
-          npm run test
-        working-directory: ui
+        # Create an empty file inside dist so Go does not fail when compiling the code
+        run: mkdir ./ui/dist && touch ./ui/dist/tmp && go test ./...

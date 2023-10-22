@@ -17,7 +17,7 @@ func TestCors(t *testing.T) {
 	corsHandler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
 
 	headers := map[string]string{
-		"Access-Control-Allow-Origin":  "null",
+		"Access-Control-Allow-Origin":  "*",
 		"Access-Control-Allow-Headers": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, accept, origin, Cache-Control, X-Requested-With",
 		"Access-Control-Allow-Methods": "GET, POST, HEAD",
 		"Access-Control-Max-Age":       "600",

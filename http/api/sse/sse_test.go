@@ -326,6 +326,7 @@ func (s *SSESuite) TestSubscribePaymentsFailed() {
 	id := s.sse.TrackPayment(rHash, publicKey, amount)
 
 	winners := []db.Winner{{PublicKey: publicKey, Prizes: amount}}
+	s.winnersMock.On("GetPrizes", publicKey).Return(uint64(0), nil)
 	s.winnersMock.On("Add", winners).Return(nil)
 
 	payload := &paymentsPayload{
@@ -430,7 +431,7 @@ func (s *SSESuite) TestRestoreFunds() {
 	}
 	s.sse.trackedPayments.Set(rHash, entry)
 
-	s.winnersMock.On("GetPrizes", entry.publicKey).Return(0, nil)
+	s.winnersMock.On("GetPrizes", entry.publicKey).Return(uint64(0), nil)
 
 	winner := db.Winner{PublicKey: entry.publicKey, Prizes: entry.amount}
 	s.winnersMock.On("Add", []db.Winner{winner}).Return(nil)

@@ -19,14 +19,14 @@ import (
 
 var bets = []db.Bet{
 	{
-		Index:     2016,
+		Index:     200_016,
 		PublicKey: "1",
-		Tickets:   2016,
+		Tickets:   200_016,
 	},
 	{
-		Index:     6048,
+		Index:     823_064,
 		PublicKey: "2",
-		Tickets:   4032,
+		Tickets:   623_048,
 	},
 }
 
@@ -97,7 +97,7 @@ func TestRaffle(t *testing.T) {
 		}
 
 		fee := float64(prizePool) * (btryFee / 100)
-		assert.Equal(t, math.Floor(float64(prizePool)-fee), float64(givenPrizes))
+		assert.Equal(t, math.Round(float64(prizePool)-fee), float64(givenPrizes))
 	})
 
 	t.Run("Winners history table was updated", func(t *testing.T) {
@@ -115,7 +115,7 @@ func TestRaffle(t *testing.T) {
 		}
 
 		fee := float64(prizePool) * (btryFee / 100)
-		assert.Equal(t, math.Floor(float64(prizePool)-fee), float64(givenPrizes))
+		assert.Equal(t, math.Round(float64(prizePool)-fee), float64(givenPrizes))
 	})
 }
 
@@ -149,7 +149,7 @@ func TestGetWinners(t *testing.T) {
 		validateGetWinner(t, winner.Ticket, winner.PublicKey)
 
 		prize := (prizes[i] / 100) * float64(prizePool)
-		assert.Equal(t, uint64(prize), winner.Prizes)
+		assert.Equal(t, uint64(math.Round(prize)), winner.Prizes)
 		assert.LessOrEqual(t, winner.CreatedAt, now.Add(time.Second).Unix())
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"fmt"
+	"math"
 	"math/big"
 	"time"
 
@@ -169,7 +170,7 @@ func (l *Lottery) getWinners(prizePool uint64, bets []db.Bet) ([]db.Winner, erro
 		winner := db.Winner{
 			PublicKey: publicKey,
 			Ticket:    ticket,
-			Prizes:    uint64(prize),
+			Prizes:    uint64(math.Round(prize)),
 			// Set just for the clients, server-side is generated automatically by SQL
 			CreatedAt: now.Unix(),
 		}

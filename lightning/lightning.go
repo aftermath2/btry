@@ -40,7 +40,6 @@ type Stream[T any] interface {
 type Client interface {
 	AddInvoice(ctx context.Context, amountSat uint64) (*lnrpc.AddInvoiceResponse, error)
 	DecodeInvoice(ctx context.Context, invoice string) (*lnrpc.PayReq, error)
-	LightningAddresses() []string
 	PayInvoice(ctx context.Context, invoice *lnrpc.PayReq, feeSat int64, inflightUpdates bool) (Stream[*lnrpc.Payment], error)
 	RemoteBalance(ctx context.Context) (int64, error)
 	SubscribeChannelEvents(ctx context.Context) (Stream[*lnrpc.ChannelEventUpdate], error)
@@ -49,10 +48,9 @@ type Client interface {
 }
 
 type client struct {
-	ln                 lnrpc.LightningClient
-	router             routerrpc.RouterClient
-	logger             *logger.Logger
-	lightningAddresses []string
+	ln     lnrpc.LightningClient
+	router routerrpc.RouterClient
+	logger *logger.Logger
 }
 
 // NewClient returns a new client that communicates with a Lightning node.
@@ -121,11 +119,6 @@ func (c *client) AddInvoice(ctx context.Context, amountSat uint64) (*lnrpc.AddIn
 // BOLT-0011 and matches the provided active network.
 func (c *client) DecodeInvoice(ctx context.Context, invoice string) (*lnrpc.PayReq, error) {
 	return c.ln.DecodePayReq(ctx, &lnrpc.PayReqString{PayReq: invoice})
-}
-
-// GetLightningAddresses returns the node's lightning addresses.
-func (c *client) LightningAddresses() []string {
-	return c.lightningAddresses
 }
 
 // PayInvoice attempts to route a payment to the final destination.

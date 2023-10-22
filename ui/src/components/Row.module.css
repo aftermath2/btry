@@ -1,0 +1,15 @@
+.container {
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	gap: 15px;
+	border-bottom: 2px solid var(--grey);
+}
+
+.text {
+	margin: 10px 0;
+	text-align: justify;
+	white-space: pre-wrap;
+	word-break: break-word;
+	word-wrap: break-word;
+}

@@ -1,0 +1,46 @@
+.container {
+	display: table;
+	max-width: 100%;
+	border-collapse: collapse;
+}
+
+.header {
+	display: table-row;
+	line-height: 40px;
+}
+
+.row {
+	display: table-row;
+	line-height: 35px;
+}
+
+.title {
+	display: table-cell;
+	padding: 0px 1vw;
+	font-size: 1.125rem;
+}
+
+.text {
+	display: table-cell;
+	padding: 0px 1vw;
+	text-align: justify;
+	text-overflow: ellipsis;
+	white-space: pre-wrap;
+	word-break: break-word;
+	word-wrap: break-word;
+}
+
+/* Media query */
+@media (max-width: 525px) {
+	.header {
+		line-height: 20px;
+	}
+
+	.title {
+		padding: 0 12px;
+	}
+
+	.text {
+		padding: 0 12px;
+	}
+}

@@ -1,0 +1,29 @@
+.title {
+	color: var(--white);
+	margin: 0 0 20px 0;
+	font-size: 1.375rem;
+	font-weight: 700;
+	text-align: center;
+}
+
+.withdraw {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 100%;
+}
+
+.available {
+	color: var(--light-grey);
+	font-size: 1rem;
+	font-weight: 600;
+	margin: 0;
+}
+
+.line {
+	border: none;
+	background-color: var(--grey);
+	height: 1px;
+	width: 95%;
+	margin: 20px 0;
+}

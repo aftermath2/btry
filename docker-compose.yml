@@ -1,0 +1,89 @@
+version: "3.8"  
+
+services:
+
+  server-dev:
+    build: 
+      context: .
+      dockerfile: dev.Dockerfile
+    command: tail -f /dev/null
+    network_mode: service:tor
+    container_name: server-dev
+    volumes:
+      - ./config.yml:/config.yml
+      - ./:/BTRY
+    depends_on:
+      - lnd
+      - bitcoind
+
+  # server:
+  #   build: .
+  #   restart: always
+  #   network_mode: service:tor
+  #   container_name: server
+  #   volumes:
+  #     - ./config.yml:/config.yml
+  #     # - ../node/lnd:/lnd # Only necessary if we would like to access tls/macaroon files
+  #   depends_on:
+  #     - lnd
+  #     - bitcoind
+
+  ui:
+    build:
+      context: ui
+      target: development
+    restart: on-failure:10
+    ports:
+      - 3000:3000
+    volumes:
+      - ./ui:/usr/src/ui
+      - /usr/src/ui/node_modules
+    depends_on:
+      - server
+  
+  tor:
+    build: ./docker/tor
+    restart: always
+    container_name: tor
+    environment:
+      LOCAL_USER_ID: 1000
+      LOCAL_GROUP_ID: 1000
+    volumes:
+      - ../node/tor/data:/var/lib/tor
+      - ../node/tor/config:/etc/tor
+  
+  bitcoind:
+    build: ./docker/bitcoind
+    restart: always
+    network_mode: service:tor
+    container_name: bitcoind
+    environment:
+      LOCAL_USER_ID: 1000
+      LOCAL_GROUP_ID: 1000
+    volumes:
+      - ../node/tor/data:/var/lib/tor:ro
+      - ../node/tor/config:/etc/tor:ro
+      - ../node/bitcoin:/home/bitcoin/.bitcoin
+    depends_on:
+      - tor
+
+  lnd:
+    build: ./docker/lnd
+    restart: always
+    network_mode: service:tor
+    container_name: lnd
+    command: lnd
+    environment:
+      LOCAL_USER_ID: 1000
+      LOCAL_GROUP_ID: 1000
+      LND_RPC_PORT: 10009
+      LND_REST_PORT: 8080
+      AUTO_UNLOCK_PWD: ${AUTO_UNLOCK_PWD}
+    volumes:
+      - ../node/tor/data:/var/lib/tor
+      - ../node/tor/config:/etc/tor
+      - ../node/lnd:/home/lnd/.lnd
+      - ../node/lnd:/root/.lnd
+    depends_on:
+      - tor
+      - bitcoind

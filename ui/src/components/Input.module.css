@@ -1,0 +1,26 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 100%;
+}
+
+.title {
+	color: var(--white);
+	align-self: flex-start;
+	justify-self: flex-start;
+	margin: 0 0 8px 5px;
+	font-size: 1rem;
+	font-weight: 600;
+}
+
+.value {
+	text-align: right;
+	color: var(--white);
+	padding: 8px;
+	border-radius: 5px;
+	border: 1px solid var(--grey);
+	font-size: 1.25rem;
+	background: none;
+	width: 95%;
+}

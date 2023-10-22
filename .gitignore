@@ -1,0 +1,6 @@
+*.db
+btry
+btry.yaml
+btry.yml
+.env
+node_modules

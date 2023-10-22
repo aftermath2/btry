@@ -1,0 +1,68 @@
+api: 
+  logger:
+    label: API
+    out_file: api.log
+    level: 0
+  rate_limiter:
+    tokens: 40
+    interval: 3m
+  sse:
+    logger:
+      label: SSE
+      out_file: sse.log
+      level: 2
+
+db:
+  path: bdb
+  winners_path: winners.db
+  winners_history_path: winners_history.db
+  logger:
+    label: DB
+    out_file: db.log
+    level: 0
+
+lightning:
+  network: regtest
+  rpc_address: 127.0.0.1:10001
+  logger:
+    label: LND
+    out_file: lnd.log
+    level: 1
+  lightning_addresses: 
+    - username@service.domain
+  tls_cert_path: ./testdata/tls.cert
+  macaroon_path: ./testdata/readonly.macaroon
+  max_fee_ppm: 500
+
+lottery:
+  time: 00:00
+  logger:
+    label: Lottery
+    out_file: lottery.log
+    level: 1
+
+notifier:
+  logger:
+    label: Notifier
+    out_file: notifier.log
+    level: 1
+  telegram:
+    bot_api_token: ""
+    bot_name: BotName
+
+server:
+  address: 127.0.0.1:9000
+  tls_certificates: []
+  timeout:
+    read: 8s
+    write: 13s
+    shutdown: 50s
+    idle: 150s
+  logger:
+    label: Server
+    out_file: server.log
+    level: 1
+
+tor:
+  address: 127.0.0.1:9050
+  timeout: 120s

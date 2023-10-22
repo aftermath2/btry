@@ -1,0 +1,14 @@
+.overlay {
+	position: fixed;
+	display: flex;
+	inset: 0 0 0 0;
+	background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal {
+	display: flex;
+	flex: 1;
+	justify-content: center;
+	align-items: center;
+	overflow: auto;
+}

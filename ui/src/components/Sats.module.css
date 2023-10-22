@@ -1,0 +1,17 @@
+.container {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	color: var(--white);
+}
+
+.number {
+	color: var(--white);
+	margin: 0;
+}
+
+.icon {
+	width: 1.15rem;
+	height: 1.15rem;
+	margin: 0;
+}

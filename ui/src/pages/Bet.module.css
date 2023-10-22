@@ -1,0 +1,118 @@
+.title {
+	flex: 2;
+	color: var(--white);
+	margin: 0px;
+	font-size: 1.5rem;
+	font-weight: 700;
+	text-align: center;
+}
+
+.warning {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.warning p {
+	margin: 0;
+}
+
+.private_key {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 20px;
+	white-space: pre-wrap;
+	word-break: break-word;
+	word-wrap: break-word;
+	border: 1px solid var(--light-grey);
+	padding: 10px;
+}
+
+.copy {
+	cursor: pointer;
+	border: none;
+	fill: var(--fog);
+	background: none;
+}
+
+.copy:active {
+	transform: scale(0.95);
+	box-shadow: 3px 2px 25px 1px rgba(0, 0, 0, 0.3);
+}
+
+.copy_icon {
+	width: 20px;
+	height: 20px;
+}
+
+.bet {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 100%;
+	margin-top: 30px;
+	gap: 8px;
+}
+
+.invoice_header {
+	display: flex;
+	width: 100%;
+	padding: 0 5px;
+	margin-bottom: 30px;
+}
+
+.invoice_left {
+	display: flex;
+	flex: 0.5;
+	align-items: center;
+}
+
+.back_icon {
+	color: var(--light-grey);
+	cursor: pointer;
+	width: 35px;
+	height: 35px;
+}
+
+.invoice_right {
+	flex: 0.5;
+}
+
+.amount {
+	color: var(--fog);
+	font-size: 1.125rem;
+	font-weight: 500;
+	margin: 0;
+}
+
+.qrcode {
+	justify-content: center;
+}
+
+.invoice {
+	display: flex;
+	justify-content: space-between;
+	word-break: break-all;
+}
+
+.pr {
+	color: var(--white);
+	word-break: break-all;
+	margin: 15px 0 25px 0;
+}
+
+.buttons {
+	display: flex;
+	justify-content: space-around;
+	width: 300px;
+	gap: 30px;
+}
+
+
+/* Media query */
+@media (max-width: 400px) {
+	.buttons {
+		width: 250px;
+	}
+}

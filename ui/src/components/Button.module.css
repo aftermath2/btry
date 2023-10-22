@@ -1,0 +1,31 @@
+.container {
+	display: flex;
+	justify-content: center;
+	width: 100%;
+	margin-top: 10px;
+}
+
+.button {
+	color: var(--white);
+	cursor: pointer;
+	width: 100%;
+	padding: 10px 15px;
+	border: none;
+	border-radius: 10px;
+	overflow: hidden;
+	white-space: nowrap;
+	background-color: var(--red);
+	font-family: Noto Sans, Arial, sans-serif;
+	font-weight: 700;
+	font-size: 1rem;
+	text-align: center;
+	text-transform: uppercase;
+	white-space: pre-wrap;
+	word-break: break-word;
+	word-wrap: break-word;
+}
+
+.button:active {
+	transform: scale(0.95);
+	box-shadow: 3px 2px 25px 1px rgba(0, 0, 0, 0.3);
+}

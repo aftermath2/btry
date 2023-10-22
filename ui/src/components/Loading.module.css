@@ -1,0 +1,25 @@
+.container {
+	text-align: center;
+	margin: 40px 0px 20px 0px;
+}
+
+.loading {
+	width: 30px;
+	height: 30px;
+	border: 5px solid var(--grey);
+	border-bottom-color: var(--red);
+	border-radius: 50%;
+	display: inline-block;
+	box-sizing: border-box;
+	animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+	0% {
+		transform: rotate(0deg);
+	}
+
+	100% {
+		transform: rotate(360deg);
+	}
+}

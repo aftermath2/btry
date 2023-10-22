@@ -1,0 +1,62 @@
+/* Footer.module.css */
+
+.container {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+	background-color: var(--black);
+	margin-top: 60px;
+	padding: 0.5vh 0.4vw 0.1vh 0.4vw;
+	box-shadow: 4px 0px 0px 4px rgba(0, 0, 0, 0.25);
+}
+
+.logos {
+	display: flex;
+	justify-content: center;
+	gap: 15px;
+	margin: 0.5rem;
+}
+
+.logo {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 32px;
+	height: 32px;
+	background-color: var(--white);
+	border-radius: 100%;
+}
+
+.logo_github {
+	margin: 0;
+	width: 26px;
+}
+
+.logo_tor {
+	margin: 0;
+	width: 28px;
+}
+
+.note {
+	background-color: var(--black);
+	text-align: center;
+}
+
+.text {
+	color: var(--white);
+	margin: 0px 0px 5px 0px;
+}
+
+.version {
+	display: flex;
+	flex-direction: row;
+	gap: 5px;
+}
+
+.version_text {
+	font-size: 0.8rem;
+	color: var(--light-grey);
+	margin: 0 0 5px 0;
+}

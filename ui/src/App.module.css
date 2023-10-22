@@ -1,0 +1,13 @@
+.app {
+	background-color: var(--deep-black);
+	display: flex;
+	min-height: 100vh;
+	flex-direction: column;
+	margin: 0;
+}
+
+.error {
+	flex: 1;
+	text-align: center;
+	color: var(--white);
+}

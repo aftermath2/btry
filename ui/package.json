@@ -1,5 +1,5 @@
 {
-	"name": "BTRY",
+	"name": "btry",
 	"version": "0.0.1",
 	"description": "Lottery based on the Bitcoin Lightning Network",
 	"scripts": {

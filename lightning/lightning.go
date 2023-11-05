@@ -19,13 +19,8 @@ import (
 	"gopkg.in/macaroon.v2"
 )
 
-const (
-	// DefaultInvoiceExpiry is the default time used for invoices expiration.
-	DefaultInvoiceExpiry = time.Hour * 3
-
-	// LNURL invoice description hash
-	emptySHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-)
+// DefaultInvoiceExpiry is the default time used for invoices expiration.
+const DefaultInvoiceExpiry = time.Hour * 3
 
 // TODO:
 // - Accept receiving and sending via on-chain

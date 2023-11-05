@@ -122,7 +122,7 @@ const parseErr = async (res: Response): Promise<string> => {
 	}
 	const err: ErrResponse | LNURLErrorResponse = await res.json()
 	return JSON.stringify({ url: res.url, message: err }, null, 4)
-};
+}
 
 export function panic(message: string) {
 	throw new Error(message)

@@ -3,7 +3,6 @@ import { QRCodeSVG } from 'solid-qr-code';
 
 import styles from "./QRCode.module.css"
 
-
 interface Props {
 	value: string
 	size?: number

@@ -6,11 +6,10 @@ on:
       - "master"
   pull_request:
     paths-ignore:
-      - "ui/**"
       - "docker/**"
 
 jobs:
-  test:
+  server:
     name: Tests (Server)
     runs-on: ubuntu-latest
     strategy:
@@ -30,3 +29,23 @@ jobs:
       - name: Run tests
         # Create an empty file inside dist so Go does not fail when compiling the code
         run: mkdir ./ui/dist && touch ./ui/dist/tmp && go test ./...
+  
+    ui:
+      name: Tests (UI)
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+
+        - name: Set up NodeJS
+          uses: actions/setup-node@v3
+          with:
+            node-version: 20
+            cache: npm
+            cache-dependency-path: ui/package-lock.json
+
+        - name: Run tests
+          run: |
+            npm ci
+            npm run test
+          working-directory: ui

@@ -1,6 +1,6 @@
 import { createI18nContext } from "@solid-primitives/i18n";
 
-const dict = {
+export const dict = {
 	en: {
 		bet: "Bet",
 		bets: "Bets",
@@ -76,7 +76,10 @@ const dict = {
 		next: "Nächste",
 		previous: "Vorherige",
 		congratulations: "Glückwunsch! Sie haben {{ prizes }} satoshis gewonnen",
-		amount: "Menge"
+		amount: "Menge",
+		restore: "Wiederherstellen",
+		generate_random_keys: "Zufällige schlüssel erzeugen",
+		enable_notifications: "Aktivieren sie {{ service }} benachrichtigungen"
 	},
 	es: {
 		bet: "Apostar",
@@ -113,7 +116,10 @@ const dict = {
 		next: "Siguiente",
 		previous: "Anterior",
 		congratulations: "Felicidades! Has ganado {{ prizes }} satoshis",
-		amount: "Cantidad"
+		amount: "Cantidad",
+		restore: "Restaurar",
+		generate_random_keys: "Generar llaves aleatorias",
+		enable_notifications: "Hablitar notificaciones de {{ service }}"
 	},
 	fr: {
 		bet: "Parier",
@@ -150,7 +156,10 @@ const dict = {
 		next: "Suivant",
 		previous: "Précédent",
 		congratulations: "Toutes nos félicitations! Vous avez gagné {{ prizes }} satoshis",
-		amount: "Quantité"
+		amount: "Quantité",
+		restore: "Restaurer",
+		generate_random_keys: "Générer des clés aléatoires",
+		enable_notifications: "Activer les notifications des {{ service }}"
 	},
 	it: {
 		bet: "Scommettere",
@@ -187,7 +196,10 @@ const dict = {
 		next: "Prossimo",
 		previous: "Precedente",
 		congratulations: "Congratulazioni! Hai vinto {{ prizes }} satoshis",
-		amount: "Quantità"
+		amount: "Quantità",
+		restore: "Ristabilire",
+		generate_random_keys: "Generare chiavi casuali",
+		enable_notifications: "Abilita notifiche di {{ service }}"
 	},
 	pr: {
 		bet: "Bet",
@@ -224,7 +236,10 @@ const dict = {
 		next: "Next",
 		previous: "Previous",
 		congratulations: "Parabéns! Você ganhou {{ prizes }} satoshis",
-		amount: "Quantia"
+		amount: "Quantia",
+		restore: "Restaurar",
+		generate_random_keys: "Gerar teclas aleatórias",
+		enable_notifications: "Ativar notificações de {{ service }}"
 	},
 	jp: {
 		bet: "賭ける",
@@ -261,7 +276,10 @@ const dict = {
 		next: "次",
 		previous: "前の",
 		congratulations: "おめでとう！ あなたは {{ prizes }} satoshis を獲得しました",
-		amount: "額"
+		amount: "額",
+		restore: "復元する",
+		generate_random_keys: "ランダムキーを生成します",
+		enable_notifications: "{{ service }} 通知を有効にします"
 	},
 	ch: {
 		bet: "打賭",
@@ -298,7 +316,10 @@ const dict = {
 		next: "下一個",
 		previous: "以前的",
 		congratulations: "恭喜！您已經贏了 {{ prizes }} satoshis",
-		amount: "數量"
+		amount: "數量",
+		restore: "恢复",
+		generate_random_keys: "生成随机键",
+		enable_notifications: "启用 {{ service }} 通知"
 	},
 	ru: {
 		bet: "Ставка",
@@ -334,8 +355,11 @@ const dict = {
 		index: "Индекс",
 		next: "Далее",
 		previous: "Предыдущий",
-		congratulations: "Поздравляю! Вы выиграли {{ prizes }} Сатошис",
-		amount: "Сумма"
+		congratulations: "Поздравляю! Вы выиграли {{ prizes }} satoshis",
+		amount: "Сумма",
+		restore: "Восстановить",
+		generate_random_keys: "Генерировать случайные ключи",
+		enable_notifications: "Inable {{ service }} уведомления"
 	}
 };
 

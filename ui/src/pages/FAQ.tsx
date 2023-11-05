@@ -33,7 +33,7 @@ Prizes distribution as a percentage of the total prize pool:
 BTRY fee: 0.390625%`,
 	},
 	{
-		question: "How long can I keep my prizes in the account?",
+		question: "How long can I keep my prizes in the platform?",
 		answer: `Prizes expire after 120 hours (5 days). Consider enabling the notifications to receive a message if you win. 
 
 If BTRY were to hold prizes indefinitely, the node's ability to send and receive payments would eventually be annulled, since all the liquidity would be locked on the same side of the channels. In other words, local balance would be near 100% and remote balance would be near 0%.`,

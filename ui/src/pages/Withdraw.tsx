@@ -136,6 +136,7 @@ const Withdraw: Component = () => {
 					/>
 					<Input
 						title={t("invoice")}
+						placeholder={`${t("invoice")} (${t("amount").toLowerCase()} ${t("required").toLowerCase()})`}
 						handleInput={handleInvoiceInput}
 						value={invoice()}
 						baseProps={{

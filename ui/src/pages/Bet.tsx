@@ -69,6 +69,10 @@ const Bet: Component = () => {
 			if (paymentIDs.includes(payload.payment_id)) {
 				if (payload.status === Status.Success) {
 					toast.success(t("bet_sent"))
+					// Hide invoice only if we are not waiting for multiple ones
+					if (paymentIDs.length === 1) {
+						setShowInvoice(false)
+					}
 				}
 				// Remove payment ID from the array
 				setPaymentIDs(paymentIDs.filter(id => id !== payload.payment_id))

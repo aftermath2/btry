@@ -10,7 +10,8 @@ import Box from "./Box";
 import NoItems from "./NoItems";
 import Table from "./Table";
 import Pagination from "./Pagination";
-import { BeautifyNumber, HandleError } from "../utils/utils";
+import { BeautifyNumber } from "../utils/utils";
+import { HandleError } from "../utils/actions";
 import { useAuthContext } from "../context/AuthContext";
 
 interface Props {

@@ -1,13 +1,15 @@
 import { Component, JSX, Show, createSignal, onCleanup, onMount } from 'solid-js';
 import { useI18n } from "@solid-primitives/i18n";
 import toast from 'solid-toast';
+import { createStore } from "solid-js/store";
 
 import styles from './Bet.module.css';
 import arrowLeftIcon from "../assets/icons/arrow_left.svg"
 import copyIcon from "../assets/icons/copy.svg"
 import QRCode from "../components/QRCode";
 import Button from "../components/Button";
-import { BeautifyNumber, HandleError, NumberRegex, WriteClipboard } from "../utils/utils";
+import { BeautifyNumber, NumberRegex } from "../utils/utils";
+import { HandleError, WriteClipboard } from "../utils/actions";
 import { API } from "../api/api";
 import { GetInvoiceResponse } from "../types/api";
 import Input from "../components/Input";
@@ -15,7 +17,6 @@ import Container from "../components/Container";
 import Box from "../components/Box";
 import Modal from "../components/Modal";
 import { useAuthContext } from "../context/AuthContext";
-import { createStore } from "solid-js/store";
 import { Status } from "../types/events";
 
 const Bet: Component = () => {

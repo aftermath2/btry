@@ -59,7 +59,8 @@ To generate your own private key you could use this simple command
 openssl genpkey -algorithm ed25519 -out private_key.pem
 ```
 
-> IMPORTANT: do not share your private key. It is never sent to the server, only its derived public key and signature are used to store your bets and claim the prizes in case you win.
+> [!Warning]
+> Do not share your private key. It is never sent to the server, only its derived public key and signature are used to store your bets and claim the prizes in case you win.
 
 ## Battles (coming soon)
 
@@ -73,6 +74,7 @@ The random number generation is based on provably fair random numbers, so both p
 
 ## Build BTRY yourself
 
+> [!Note]
 > Requires Go 1.21 installed
 
 ```console

@@ -45,7 +45,7 @@ const Bet: Component = () => {
 		setAmount(amount)
 	}
 
-	const handleBet = async (): Promise<void> => {
+	const validateBet = async (): Promise<void> => {
 		if (amount() < 1) {
 			throw Error("Invalid amount")
 		}
@@ -53,31 +53,31 @@ const Bet: Component = () => {
 			throw Error(`Amount is higher than the available capacity (${BeautifyNumber(capacity())})`)
 		}
 		setShowWarning(true)
+	}
 
+	const listenInvoices = () => api.ListenInvoicesEvents((payload) => {
+		if (paymentIDs.includes(payload.payment_id)) {
+			if (payload.status === Status.Success) {
+				toast.success(t("bet_sent"))
+				setShowInvoice(false)
+			}
+			// Remove payment ID from the array
+			setPaymentIDs(paymentIDs.filter(id => id !== payload.payment_id))
+		}
+	})
+
+	const handleBet = async (): Promise<void> => {
 		const resp = await getInvoice(amount())
 		setInvoice(resp.invoice)
 		setPaymentIDs([...paymentIDs, resp.payment_id])
+		listenInvoices()
 
 		// Reset input field
 		setAmount(1)
 	}
 
-	onMount(async () => {
+	onMount(() => {
 		getLotteryCapacity()
-
-		api.ListenInvoicesEvents((payload) => {
-			if (paymentIDs.includes(payload.payment_id)) {
-				if (payload.status === Status.Success) {
-					toast.success(t("bet_sent"))
-					// Hide invoice only if we are not waiting for multiple ones
-					if (paymentIDs.length === 1) {
-						setShowInvoice(false)
-					}
-				}
-				// Remove payment ID from the array
-				setPaymentIDs(paymentIDs.filter(id => id !== payload.payment_id))
-			}
-		})
 	})
 
 	onCleanup(() => {
@@ -107,7 +107,8 @@ const Bet: Component = () => {
 					<Button
 						text={t("continue")}
 						width="40%"
-						onClick={() => {
+						onClick={async () => {
+							await HandleError(() => handleBet())()
 							setShowWarning(false)
 							setShowInvoice(true)
 						}}
@@ -128,7 +129,7 @@ const Bet: Component = () => {
 						<Input
 							title={`${t("amount")} (sats)`}
 							handleInput={handleInput}
-							onEnter={HandleError(() => handleBet())}
+							onEnter={HandleError(() => validateBet())}
 							validate={(v) => NumberRegex.test(v)}
 							value={BeautifyNumber(amount())}
 							focus
@@ -140,7 +141,7 @@ const Bet: Component = () => {
 								required: true
 							}}
 						/>
-						<Button text={t("bet")} onClick={HandleError(() => handleBet())} />
+						<Button text={t("bet")} onClick={HandleError(() => validateBet())} />
 					</div>
 				</Show>
 

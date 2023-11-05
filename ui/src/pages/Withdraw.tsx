@@ -15,7 +15,7 @@ import QRCode from "../components/QRCode";
 import Loading from "../components/Loading";
 import Container from "../components/Container";
 import Box from "../components/Box";
-import { Status } from "../types/events";
+import { PaymentsPayload, Status } from "../types/events";
 
 const errNoPrizes = Error("No prizes available to withdraw")
 const errInvalidFee = Error("Invalid fee amount")
@@ -54,6 +54,22 @@ const Withdraw: Component = () => {
 		setInvoice(invoice)
 	}
 
+	const listenPayments = () => new Promise<PaymentsPayload>((resolve, reject) => {
+		api.ListenPaymentsEvents((payload) => {
+			if (paymentIDs().includes(payload.payment_id)) {
+				if (payload.status === Status.Success) {
+					resolve(payload)
+				} else {
+					reject(payload)
+					refetch()
+				}
+
+				// Remove payment ID from the array
+				setPaymentIDs(paymentIDs().filter(id => id !== payload.payment_id))
+			}
+		})
+	})
+
 	const withdraw = async (): Promise<void> => {
 		const availablePrizes = prizes() || 0
 		if (availablePrizes === 0) {
@@ -73,32 +89,18 @@ const Withdraw: Component = () => {
 		const signature = await Sign(auth().privateKey, auth().publicKey)
 		const resp = await api.Withdraw(signature, invoice(), auth().publicKey, fee())
 		setPaymentIDs([...paymentIDs(), resp.payment_id])
-		toast.success(t("withdrawal_request_sent"))
+
+		toast.promise(listenPayments(), {
+			loading: t("withdrawal_request_sent"),
+			success: (payload) => <span>{t("withdrawal_success")}</span>,
+			error: (payload) => <span>{t("withdrawal_failed")}: {payload.error}</span>
+		})
 		refetch()
 
 		// Reset input fields
 		setFee(1)
 		setInvoice("")
 	}
-
-	createEffect(
-		on(
-			paymentIDs,
-			() => api.ListenPaymentsEvents((payload) => {
-				if (paymentIDs().includes(payload.payment_id)) {
-					if (payload.status === Status.Success) {
-						toast.success(t("withdrawal_success"))
-					} else {
-						toast.error(`${t("withdrawal_failed")}: ${payload.error}`)
-					}
-					refetch()
-
-					// Remove payment ID from the array
-					setPaymentIDs(paymentIDs().filter(id => id !== payload.payment_id))
-				}
-			})
-		)
-	)
 
 	onCleanup(() => {
 		api.Abort()

@@ -1,0 +1,68 @@
+# The configuration file path can be specified in the BTRY_CONFIG environment variable. 
+# If it's not specified, it should be located in the same directory as the BTRY binary and must be named 'btry.yml'.
+
+api: 
+  logger:
+    label: API
+    out_file: logs/api.log
+    level: 2 # INFO
+  rate_limiter: # 50 calls in a time window of 30s
+    tokens: 50
+    interval: 30s
+  sse:
+    deadline: 24h # Keep SSE connections open for as long as 24h
+    logger:
+      label: SSE
+      out_file: logs/sse.log
+      level: 2
+
+db:
+  path: btry.db
+  max_idle_conns: 100
+  conn_max_idle_time: 5m
+  logger:
+    label: DB
+    out_file: logs/db.log
+    level: 1
+
+lightning:
+  rpc_address: 127.0.0.1:10001
+  logger:
+    label: LND
+    out_file: logs/lnd.log
+    level: 1
+  tls_cert_path: path/to/tls_cert
+  macaroon_path: path/to/macaroon_path
+
+lottery:
+  time: 00:00
+  logger:
+    label: Lottery
+    out_file: logs/lottery.log
+    level: 2
+
+notifier:
+  logger:
+    label: Notifier
+    out_file: logs/notifier.log
+    level: 2
+  telegram:
+    bot_api_token: bot_api_token
+    bot_name: bot_name
+
+server:
+  address: 127.0.0.1:7070
+  tls_certificates: []
+  timeout: # 0 means there's no timeout
+    read: 5s
+    write: 10s
+    shutdown: 5s
+    idle: 120s
+  logger:
+    label: Server
+    out_file: logs/server.log
+    level: 2
+
+tor:
+  address: 127.0.0.1:9050
+  timeout: 20s

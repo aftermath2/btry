@@ -72,15 +72,15 @@ Initially, the idea is simple, both users choose one number between 0 and 1000, 
 
 The random number generation is based on provably fair random numbers, so both parties can validate that the results are fair and not manipulated.
 
-## Build BTRY yourself
+## Building BTRY
 
 > [!Note]
-> Requires Go 1.21 installed
+> Requires Go 1.21 and Node.js 20+ installed
 
 ```console
-git clone https://github.com/aftermath2/BTRY.git
-cd BTRY
-go build -o BTRY -ldflags="-s -w" .
+git clone https://github.com/aftermath2/btry.git
+cd btry
+./build.sh
 ```
 
 ### Macaroons

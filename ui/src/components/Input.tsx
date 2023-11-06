@@ -10,6 +10,7 @@ interface Props {
 	validate?: (v: string) => boolean
 	focus?: boolean
 	baseProps?: JSX.InputHTMLAttributes<HTMLInputElement>
+	placeholder?: string
 }
 
 const Input: Component<Props> = (props: Props) => {
@@ -17,17 +18,17 @@ const Input: Component<Props> = (props: Props) => {
 
 	const validateInput: JSX.EventHandlerUnion<HTMLInputElement, KeyboardEvent> = (event) => {
 		if (props.validate && !props.validate(event.key)) {
-			event.preventDefault();
+			event.preventDefault()
 		}
 	}
 
 	const validatePaste: JSX.EventHandlerUnion<HTMLInputElement, ClipboardEvent> = (event) => {
-		const pastedData = event.clipboardData?.getData("text").trim();
+		const pastedData = event.clipboardData?.getData("text").trim()
 		if (pastedData && props.validate && !props.validate(pastedData)) {
-			event.stopPropagation();
-			event.preventDefault();
+			event.stopPropagation()
+			event.preventDefault()
 		}
-	};
+	}
 
 	onMount(() => {
 		if (props.focus) {
@@ -41,7 +42,7 @@ const Input: Component<Props> = (props: Props) => {
 			<input
 				class={styles.value}
 				ref={ref!}
-				placeholder={props.title}
+				placeholder={props.placeholder || props.title}
 				{...props.baseProps}
 				type="text"
 				onKeyPress={(e) => validateInput(e)}

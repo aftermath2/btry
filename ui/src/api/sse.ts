@@ -15,6 +15,7 @@ export class SSE {
 	private stream: EventSource
 	// In seconds
 	private delay = 3
+	private listening: string[] = []
 
 	constructor() {
 		this.stream = new EventSource(eventSourceURL)
@@ -37,10 +38,17 @@ export class SSE {
 	}
 
 	listen<T extends EventPayload>(eventName: EventName, onEvent: (payload: T) => void): void {
+		// Do not listen for the same event type more than once
+		if (this.listening.includes(eventName)) {
+			return
+		}
+
 		this.stream.addEventListener(eventName, (event) => {
 			const payload: T = JSON.parse(event.data)
 			onEvent(payload)
 		})
+
+		this.listening.push(eventName)
 	}
 
 	close(): void {

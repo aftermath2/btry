@@ -17,8 +17,16 @@
 }
 
 .brand {
+	display: flex;
 	flex: 1;
 	font-weight: 700;
+	align-items: center;
+	gap: 10px;
+}
+
+.logo {
+	width: 32px;
+	height: 32px;
 }
 
 .pages {

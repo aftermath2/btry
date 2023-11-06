@@ -4,6 +4,7 @@ import { useI18n } from "@solid-primitives/i18n";
 import Dismiss from "solid-dismiss";
 
 import styles from "./Header.module.css";
+import logo from "../assets/icons/logo.svg"
 import angleDownIcon from "../assets/icons/angle_down.svg"
 import { useAuthContext } from "../context/AuthContext";
 import Menu from "./Menu";
@@ -19,9 +20,10 @@ const Header: Component = () => {
 	return (
 		<header class={styles.header}>
 			<div class={styles.container}>
-				<div class={styles.brand}>
-					<A href="/">BTRY</A>
-				</div>
+				<A href="/" class={styles.brand}>
+					<img class={styles.logo} src={logo} />
+					<p>BTRY</p>
+				</A>
 
 				<div class={styles.pages}>
 					<A class={styles.link} href="/bet">{t("bet")}</A>

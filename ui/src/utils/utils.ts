@@ -1,5 +1,4 @@
-import * as ed from '@noble/ed25519';
-import toast from "solid-toast";
+import { etc } from "@noble/ed25519";
 
 export const NumberRegex = /[0-9]/
 export const HexRegex = /[0-9a-f]/
@@ -42,21 +41,6 @@ export const FormatTime = (t: string): string => {
 	return parts.join(":")
 }
 
-/**
- * HandleError wraps a function inside a try-catch statement and triggers a notification if there
- * is an error.
- * 
- * @param fn function to run that may fail
- */
-export const HandleError = (fn: () => Promise<void>) => {
-	return async function () {
-		try {
-			return await fn()
-		} catch (error: any) {
-			toast.error(error.message)
-		}
-	}
-}
 
 /**
  * Hash takes any string and returns its SHA-256 hash.
@@ -68,7 +52,7 @@ export const Hash = async (key: string): Promise<string> => {
 	const buf = new TextEncoder().encode(key)
 	const hash = await crypto.subtle.digest("SHA-256", buf)
 	const hashArray = new Uint8Array(hash)
-	return ed.etc.bytesToHex(hashArray)
+	return etc.bytesToHex(hashArray)
 }
 
 /**
@@ -81,14 +65,4 @@ export const HexEncode = (text: string): string => {
 	return text.split("")
 		.map(c => c.charCodeAt(0).toString(16).padStart(2, "0"))
 		.join("");
-}
-
-/**
- * WriteClipboard copies text to the clipboard
- * 
- * @param text
- */
-export const WriteClipboard = (text: string, message?: string) => {
-	navigator.clipboard.writeText(text)
-	toast.success(message)
 }

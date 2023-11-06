@@ -4,7 +4,8 @@ import { useI18n } from "@solid-primitives/i18n";
 import styles from "./Menu.module.css";
 import copyIcon from "../assets/icons/copy.svg"
 import { useAuthContext } from "../context/AuthContext";
-import { HandleError, Hash, HexEncode, HexRegex, WriteClipboard } from "../utils/utils";
+import { Hash, HexEncode, HexRegex } from "../utils/utils";
+import { HandleError, WriteClipboard } from "../utils/actions";
 import Button from "./Button";
 import { GenerateKeyPair, GetPublicKey } from "../utils/crypto";
 import { NicknameFromKey } from "../utils/nickname/nickname";

@@ -14,7 +14,7 @@ const Footer: Component = () => {
 				<div class={styles.logos}>
 					<a
 						class={styles.logo}
-						// href="https://github.com/aftermath2/BTRY"
+						href="https://github.com/aftermath2/btry"
 						type="button"
 						rel="noreferrer"
 					>
@@ -22,7 +22,7 @@ const Footer: Component = () => {
 					</a>
 					<a
 						class={styles.logo}
-						// href="http://url.onion"
+						// href="http://<url>.onion"
 						type="button"
 						rel="noreferrer"
 					>
@@ -34,7 +34,7 @@ const Footer: Component = () => {
 					<div class={styles.version}>
 						<a
 							class={styles.version_text}
-							// href={`https://github.com/aftermath2/BTRY/commit/${__COMMIT_HASH__}`}
+							href={`https://github.com/aftermath2/btry/commit/${__COMMIT_HASH__}`}
 							rel="noreferrer"
 						>
 							{__COMMIT_HASH__}

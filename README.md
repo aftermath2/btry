@@ -59,7 +59,8 @@ To generate your own private key you could use this simple command
 openssl genpkey -algorithm ed25519 -out private_key.pem
 ```
 
-> IMPORTANT: do not share your private key. It is never sent to the server, only its derived public key and signature are used to store your bets and claim the prizes in case you win.
+> [!Warning]
+> Do not share your private key. It is never sent to the server, only its derived public key and signature are used to store your bets and claim the prizes in case you win.
 
 ## Battles (coming soon)
 
@@ -73,7 +74,8 @@ The random number generation is based on provably fair random numbers, so both p
 
 ## Building BTRY
 
-> Requires Go 1.21+ and Node.js 20+ installed
+> [!Note]
+> Requires Go 1.21 and Node.js 20+ installed
 
 ```console
 git clone https://github.com/aftermath2/btry.git

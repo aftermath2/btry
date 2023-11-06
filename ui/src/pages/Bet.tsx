@@ -1,13 +1,15 @@
 import { Component, JSX, Show, createSignal, onCleanup, onMount } from 'solid-js';
 import { useI18n } from "@solid-primitives/i18n";
 import toast from 'solid-toast';
+import { createStore } from "solid-js/store";
 
 import styles from './Bet.module.css';
 import arrowLeftIcon from "../assets/icons/arrow_left.svg"
 import copyIcon from "../assets/icons/copy.svg"
 import QRCode from "../components/QRCode";
 import Button from "../components/Button";
-import { BeautifyNumber, HandleError, NumberRegex, WriteClipboard } from "../utils/utils";
+import { BeautifyNumber, NumberRegex } from "../utils/utils";
+import { HandleError, WriteClipboard } from "../utils/actions";
 import { API } from "../api/api";
 import { GetInvoiceResponse } from "../types/api";
 import Input from "../components/Input";
@@ -15,7 +17,6 @@ import Container from "../components/Container";
 import Box from "../components/Box";
 import Modal from "../components/Modal";
 import { useAuthContext } from "../context/AuthContext";
-import { createStore } from "solid-js/store";
 import { Status } from "../types/events";
 
 const Bet: Component = () => {
@@ -44,7 +45,7 @@ const Bet: Component = () => {
 		setAmount(amount)
 	}
 
-	const handleBet = async (): Promise<void> => {
+	const validateBet = async (): Promise<void> => {
 		if (amount() < 1) {
 			throw Error("Invalid amount")
 		}
@@ -52,27 +53,31 @@ const Bet: Component = () => {
 			throw Error(`Amount is higher than the available capacity (${BeautifyNumber(capacity())})`)
 		}
 		setShowWarning(true)
+	}
 
+	const listenInvoices = () => api.ListenInvoicesEvents((payload) => {
+		if (paymentIDs.includes(payload.payment_id)) {
+			if (payload.status === Status.Success) {
+				toast.success(t("bet_sent"))
+				setShowInvoice(false)
+			}
+			// Remove payment ID from the array
+			setPaymentIDs(paymentIDs.filter(id => id !== payload.payment_id))
+		}
+	})
+
+	const handleBet = async (): Promise<void> => {
 		const resp = await getInvoice(amount())
 		setInvoice(resp.invoice)
 		setPaymentIDs([...paymentIDs, resp.payment_id])
+		listenInvoices()
 
 		// Reset input field
 		setAmount(1)
 	}
 
-	onMount(async () => {
+	onMount(() => {
 		getLotteryCapacity()
-
-		api.ListenInvoicesEvents((payload) => {
-			if (paymentIDs.includes(payload.payment_id)) {
-				if (payload.status === Status.Success) {
-					toast.success(t("bet_sent"))
-				}
-				// Remove payment ID from the array
-				setPaymentIDs(paymentIDs.filter(id => id !== payload.payment_id))
-			}
-		})
 	})
 
 	onCleanup(() => {
@@ -102,7 +107,8 @@ const Bet: Component = () => {
 					<Button
 						text={t("continue")}
 						width="40%"
-						onClick={() => {
+						onClick={async () => {
+							await HandleError(() => handleBet())()
 							setShowWarning(false)
 							setShowInvoice(true)
 						}}
@@ -123,7 +129,7 @@ const Bet: Component = () => {
 						<Input
 							title={`${t("amount")} (sats)`}
 							handleInput={handleInput}
-							onEnter={HandleError(() => handleBet())}
+							onEnter={HandleError(() => validateBet())}
 							validate={(v) => NumberRegex.test(v)}
 							value={BeautifyNumber(amount())}
 							focus
@@ -135,7 +141,7 @@ const Bet: Component = () => {
 								required: true
 							}}
 						/>
-						<Button text={t("bet")} onClick={HandleError(() => handleBet())} />
+						<Button text={t("bet")} onClick={HandleError(() => validateBet())} />
 					</div>
 				</Show>
 

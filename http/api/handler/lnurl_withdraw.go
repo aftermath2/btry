@@ -3,7 +3,6 @@ package handler
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/aftermath2/BTRY/crypto"
 	"github.com/fiatjaf/go-lnurl"
@@ -49,8 +48,13 @@ func (h *Handler) LNURLWithdraw(w http.ResponseWriter, r *http.Request) {
 		maxWithdrawableMsat = int64(totalPrizes-fee) * 1000
 	}
 
-	callback := fmt.Sprintf("%s/withdraw?fee=%d&pubkey=%s",
-		strings.TrimSuffix(r.RequestURI, r.URL.Path),
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	callback := fmt.Sprintf("%s://%s/api/withdraw?fee=%d&pubkey=%s",
+		scheme,
+		r.Host,
 		fee,
 		publicKey,
 	)

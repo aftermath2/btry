@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 
 	"github.com/aftermath2/BTRY/http/api/handler"
 	"github.com/fiatjaf/go-lnurl"
@@ -27,8 +26,8 @@ func (h *HandlerSuite) TestLNURLWithdraw() {
 	fee := prizes * handler.LNURLWithdrawFeePPM / 1_000_000
 	minWithdrawableMsat := int64(1000)
 	maxWithdrawableMsat := int64(prizes-fee) * 1000
-	callback := fmt.Sprintf("%s/withdraw?fee=%d&pubkey=%s",
-		strings.TrimSuffix(h.req.RequestURI, h.req.URL.Path),
+	callback := fmt.Sprintf("http://%s/api/withdraw?fee=%d&pubkey=%s",
+		h.req.Host,
 		fee,
 		validPublicKey,
 	)
@@ -57,8 +56,8 @@ func (h *HandlerSuite) TestLNURLWithdrawNoPrizes() {
 
 	h.handler.LNURLWithdraw(h.rec, h.req)
 
-	callback := fmt.Sprintf("%s/withdraw?fee=%d&pubkey=%s",
-		strings.TrimSuffix(h.req.RequestURI, h.req.URL.Path),
+	callback := fmt.Sprintf("http://%s/api/withdraw?fee=%d&pubkey=%s",
+		h.req.Host,
 		0,
 		validPublicKey,
 	)

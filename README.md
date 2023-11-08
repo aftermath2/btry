@@ -8,7 +8,7 @@ BTRY is an accountless lottery that uses asymmetric cryptography to register bet
 - Transparent and auditable
 - Bitcoin only
 
-Onion site: <url>.onion
+Onion site: http://22id55jzspf3mo5duk5z4honwhqdl7ebtmkemccknmpkniytxwqzzzyd.onion
 
 > BTRY requires a browser proxied through Tor to be accessed.
 

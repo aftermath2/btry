@@ -22,7 +22,7 @@ const Footer: Component = () => {
 					</a>
 					<a
 						class={styles.logo}
-						// href="http://<url>.onion"
+						href="http://22id55jzspf3mo5duk5z4honwhqdl7ebtmkemccknmpkniytxwqzzzyd.onion"
 						type="button"
 						rel="noreferrer"
 					>

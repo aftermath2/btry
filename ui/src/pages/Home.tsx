@@ -80,7 +80,7 @@ const Home: Component = () => {
 
 	return (
 		<Container>
-			<Show when={!info.loading} fallback={<Loading />}>
+			<Show when={!info.loading} fallback={<Loading margin="30px 0 100px 0" />}>
 				<div class={styles.info} >
 					<p class={`${styles.text} ${styles.prize_pool}`}>{t("prize_pool")}</p>
 					<Sats num={info()?.prize_pool} fontSize="2.813rem" fontWeight="700" />

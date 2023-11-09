@@ -1,4 +1,4 @@
-import { Component, JSX, Show, createEffect, createResource, createSignal, on, onCleanup } from 'solid-js';
+import { Component, JSX, Show, createResource, createSignal, on, onCleanup } from 'solid-js';
 import { useI18n } from "@solid-primitives/i18n";
 import toast from "solid-toast";
 
@@ -16,6 +16,7 @@ import Loading from "../components/Loading";
 import Container from "../components/Container";
 import Box from "../components/Box";
 import { PaymentsPayload, Status } from "../types/events";
+import satoshiIcon from "../assets/icons/satoshi.svg"
 
 const errNoPrizes = Error("No prizes available to withdraw")
 const errInvalidFee = Error("Invalid fee amount")
@@ -35,14 +36,12 @@ const Withdraw: Component = () => {
 	}
 	const [prizes, { refetch }] = createResource<number>(getPrizes)
 
-
 	const getLNURLWithdraw = async (): Promise<string> => {
 		const signature = await Sign(auth().privateKey, auth().publicKey)
 		const url = getLNURLWithdrawURL(auth().publicKey, signature)
 		return LNURLEncode(url)
 	}
 	const [lnurlWithdraw] = createResource<string>(getLNURLWithdraw)
-
 
 	const handleFeeInput: JSX.EventHandlerUnion<HTMLInputElement, Event> = (event) => {
 		const fee = Number(event.currentTarget.value.trim().replace(/\D/g, ""))
@@ -115,9 +114,17 @@ const Withdraw: Component = () => {
 				padding="30px 25px"
 				titleFontSize="24px"
 			>
-				<Show when={!prizes.loading} fallback={<Loading />}>
-					<p class={styles.available}>{`${t("available")}: ${prizes()} sats`}</p>
-				</Show>
+				<div class={styles.available}>
+					<p class={styles.text}>{`${t("available")}:`}</p>
+					<Show when={!prizes.loading} fallback={<Loading margin="0" width="18px" />}>
+						<p class={styles.prizes}>{BeautifyNumber(prizes())}</p>
+					</Show>
+
+					<img
+						class={styles.sats}
+						src={satoshiIcon}
+					/>
+				</div>
 
 				<div class={styles.withdraw}>
 					<Input

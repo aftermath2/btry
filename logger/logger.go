@@ -48,7 +48,7 @@ func New(config config.Logger) (*Logger, error) {
 
 	if config.OutFile != "" {
 		// Create path to the log file
-		if err := os.MkdirAll(filepath.Dir(config.OutFile), 0o600); err != nil {
+		if err := os.MkdirAll(filepath.Dir(config.OutFile), 0o700); err != nil {
 			return nil, errors.Wrap(err, "creating log file path")
 		}
 

@@ -38,7 +38,7 @@ const Withdraw: Component = () => {
 
 	const getLNURLWithdraw = async (): Promise<string> => {
 		const signature = await Sign(auth().privateKey, auth().publicKey)
-		const url = getLNURLWithdrawURL(signature)
+		const url = getLNURLWithdrawURL(auth().publicKey, signature)
 		return LNURLEncode(url)
 	}
 	const [lnurlWithdraw] = createResource<string>(getLNURLWithdraw)

@@ -16,13 +16,13 @@ const LNURLWithdrawFeePPM = 1500
 
 // LNURLWithdraw endpoint handler.
 func (h *Handler) LNURLWithdraw(w http.ResponseWriter, r *http.Request) {
-	publicKey, err := getAuthPublicKey(r)
-	if err != nil {
-		sendLNURLError(w, http.StatusBadRequest, err)
+	query := r.URL.Query()
+	publicKey := query.Get("pubkey")
+	if publicKey == "" {
+		sendLNURLError(w, http.StatusBadRequest, errors.New("pubkey parameter missing"))
 		return
 	}
 
-	query := r.URL.Query()
 	signature := query.Get("signature")
 	if signature == "" {
 		sendLNURLError(w, http.StatusBadRequest, errors.New("signature parameter missing"))

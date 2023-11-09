@@ -14,10 +14,26 @@
 }
 
 .available {
+	display: flex;
+	align-items: center;
 	color: var(--light-grey);
 	font-size: 1rem;
 	font-weight: 600;
 	margin: 0;
+}
+
+.text {
+	margin: 0 5px 0 0;
+}
+
+.prizes {
+	margin: 0 0 0 0;
+}
+
+.sats {
+	width: 18px;
+	height: 18px;
+	filter: invert(39%) sepia(0%) saturate(5%) hue-rotate(191deg) brightness(103%) contrast(92%);
 }
 
 .line {

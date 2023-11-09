@@ -88,8 +88,10 @@ func (srv *Server) Run(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, srv.shutdownTimeout)
 		defer cancel()
 
-		if err := srv.errLogFile.Close(); err != nil {
-			return errors.Wrap(err, "Closing server log file")
+		if srv.errLogFile != nil {
+			if err := srv.errLogFile.Close(); err != nil {
+				return errors.Wrap(err, "Closing server log file")
+			}
 		}
 
 		if err := srv.router.Close(); err != nil {

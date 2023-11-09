@@ -8,8 +8,8 @@ import { EventName, SSE } from "./sse";
 
 export const API_URL = `${import.meta.env.VITE_API_URL}/api`
 
-export const getLNURLWithdrawURL = (signature: string): string => {
-	return `${API_URL}/lnurl/withdraw?signature=${signature}`
+export const getLNURLWithdrawURL = (publicKey: string, signature: string): string => {
+	return `${API_URL}/lnurl/withdraw?pubkey=${publicKey}&signature=${signature}`
 }
 
 export class API {
@@ -74,9 +74,9 @@ export class API {
 		})
 	}
 
-	async LNURLWithdraw(signature: string): Promise<LNURLWithdrawResponse> {
+	async LNURLWithdraw(publicKey: string, signature: string): Promise<LNURLWithdrawResponse> {
 		return await HTTP.get<LNURLWithdrawResponse>({
-			url: getLNURLWithdrawURL(signature),
+			url: getLNURLWithdrawURL(publicKey, signature),
 			keepalive: true,
 			signal: this.abortController.signal
 		})

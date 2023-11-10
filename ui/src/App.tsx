@@ -11,6 +11,7 @@ import Withdraw from "./pages/Withdraw";
 import FAQ from "./pages/FAQ";
 import Bets from "./pages/Bets";
 import Winners from "./pages/Winners";
+import NotFound from "./pages/NotFound";
 import { useAuthContext } from "./context/AuthContext";
 import { GenerateKeyPair } from "./utils/crypto";
 import { NicknameFromKey } from "./utils/nickname/nickname";
@@ -50,6 +51,7 @@ const App: Component = () => {
 
 			<ErrorBoundary fallback={err => <Error error={err.message} />}>
 				<Routes>
+					<Route path="*" component={NotFound} />
 					<Route path="/" component={Home} />
 					<Route path="/bet" component={Bet} />
 					<Route path="/withdraw" component={Withdraw} />

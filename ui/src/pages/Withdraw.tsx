@@ -4,7 +4,7 @@ import toast from "solid-toast";
 
 import styles from './Withdraw.module.css';
 import { useAuthContext } from "../context/AuthContext";
-import { API, getLNURLWithdrawURL } from "../api/api";
+import { getLNURLWithdrawURL } from "../api/api";
 import { Sign } from "../utils/crypto";
 import Input from "../components/Input";
 import { BeautifyNumber, NumberRegex } from "../utils/utils";
@@ -17,14 +17,16 @@ import Container from "../components/Container";
 import Box from "../components/Box";
 import { PaymentsPayload, Status } from "../types/events";
 import satoshiIcon from "../assets/icons/satoshi.svg"
+import { useAPIContext } from "../context/APIContext";
+import { Event as SSEEvent } from "../api/sse";
 
 const errNoPrizes = Error("No prizes available to withdraw")
 const errInvalidFee = Error("Invalid fee amount")
 
 const Withdraw: Component = () => {
 	const [auth] = useAuthContext()
+	const api = useAPIContext()
 	const [t] = useI18n()
-	const api = new API()
 
 	const [invoice, setInvoice] = createSignal("")
 	const [fee, setFee] = createSignal(1)
@@ -54,7 +56,7 @@ const Withdraw: Component = () => {
 	}
 
 	const listenPayments = () => new Promise<PaymentsPayload>((resolve, reject) => {
-		api.ListenPaymentsEvents((payload) => {
+		api.Subscribe(SSEEvent.Payments, (payload) => {
 			if (paymentIDs().includes(payload.payment_id)) {
 				if (payload.status === Status.Success) {
 					resolve(payload)
@@ -91,7 +93,7 @@ const Withdraw: Component = () => {
 
 		toast.promise(listenPayments(), {
 			loading: t("withdrawal_request_sent"),
-			success: (payload) => <span>{t("withdrawal_success")}</span>,
+			success: (_) => <span>{t("withdrawal_success")}</span>,
 			error: (payload) => <span>{t("withdrawal_failed")}: {payload.error}</span>
 		})
 		refetch()
@@ -102,7 +104,7 @@ const Withdraw: Component = () => {
 	}
 
 	onCleanup(() => {
-		api.Abort()
+		api.Close()
 	})
 
 	return (

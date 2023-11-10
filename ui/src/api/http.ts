@@ -90,6 +90,7 @@ export class HTTP {
 			keepalive: req.keepalive,
 			signal: req.signal,
 			headers: {
+				"Accept": "application/json",
 				"Content-Type": "application/json; charset=UTF-8",
 				...(req.headers),
 			},

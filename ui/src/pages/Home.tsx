@@ -3,7 +3,6 @@ import { useI18n } from "@solid-primitives/i18n";
 
 import styles from './Home.module.css';
 
-import { API } from "../api/api";
 import Winners from "../components/Winners";
 import Bets from "../components/Bets";
 import { LotteryInfo } from "../types/lottery";
@@ -12,12 +11,14 @@ import { FormatTime } from "../utils/utils";
 import Container from "../components/Container";
 import { Status } from "../types/events";
 import Sats from "../components/Sats";
+import { useAPIContext } from "../context/APIContext";
+import { Event } from "../api/sse";
 
 const numPrizes = 8
 
 const Home: Component = () => {
+	const api = useAPIContext()
 	const [t] = useI18n()
-	const api = new API()
 
 	const [timeLeft, setTimeLeft] = createSignal("")
 	const [resetBets, setResetBets] = createSignal(false)
@@ -47,7 +48,7 @@ const Home: Component = () => {
 	createEffect(() => {
 		updateTimer()
 
-		api.ListenLotteryInfoEvents((payload) => {
+		api.Subscribe(Event.Info, (payload) => {
 			const updatedInfo: LotteryInfo = {
 				prize_pool: payload.prize_pool,
 				capacity: payload.capacity
@@ -56,7 +57,7 @@ const Home: Component = () => {
 			setResetBets(!resetBets())
 		})
 
-		api.ListenInvoicesEvents((payload) => {
+		api.Subscribe(Event.Invoices, (payload) => {
 			if (payload.status !== Status.Success) {
 				return
 			}
@@ -70,11 +71,11 @@ const Home: Component = () => {
 			}
 		})
 
-		api.ListenPaymentsEvents((payload) => payload.status === Status.Success && infoOptions.refetch())
+		api.Subscribe(Event.Payments, (payload) => payload.status === Status.Success && infoOptions.refetch())
 	})
 
 	onCleanup(() => {
-		api.Abort()
+		api.Close()
 		clearInterval(timer)
 	})
 

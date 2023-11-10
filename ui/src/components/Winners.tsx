@@ -3,7 +3,6 @@ import { useI18n } from "@solid-primitives/i18n";
 import toast from 'solid-toast';
 
 import styles from "./Winners.module.css";
-import { API } from "../api/api";
 import { Winner } from "../types/winners"
 import Loading from "./Loading";
 import Box from "./Box";
@@ -13,6 +12,8 @@ import Pagination from "./Pagination";
 import { BeautifyNumber } from "../utils/utils";
 import { HandleError } from "../utils/actions";
 import { useAuthContext } from "../context/AuthContext";
+import { useAPIContext } from "../context/APIContext";
+import { Event } from "../api/sse";
 
 interface Props {
 	showPagination?: boolean
@@ -21,8 +22,8 @@ interface Props {
 
 const Winners: Component<Props> = (props) => {
 	const [auth] = useAuthContext()
+	const api = useAPIContext()
 	const [t] = useI18n()
-	const api = new API()
 
 	const oneDaySecs = 86400
 	const initialFrom = new Date().setUTCHours(0, 0, 0, 0) / 1000
@@ -48,7 +49,7 @@ const Winners: Component<Props> = (props) => {
 			return
 		}
 
-		api.ListenLotteryInfoEvents((payload) => {
+		api.Subscribe(Event.Info, (payload) => {
 			if (payload.winners !== undefined) {
 				winnersOptions.mutate(payload.winners)
 				for (let winner of payload.winners) {
@@ -61,7 +62,7 @@ const Winners: Component<Props> = (props) => {
 	})
 
 	onCleanup(() => {
-		api.Abort()
+		api.Close()
 	})
 
 	return (

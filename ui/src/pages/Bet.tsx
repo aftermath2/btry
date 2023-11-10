@@ -10,7 +10,6 @@ import QRCode from "../components/QRCode";
 import Button from "../components/Button";
 import { BeautifyNumber, NumberRegex } from "../utils/utils";
 import { HandleError, WriteClipboard } from "../utils/actions";
-import { API } from "../api/api";
 import { GetInvoiceResponse } from "../types/api";
 import Input from "../components/Input";
 import Container from "../components/Container";
@@ -18,11 +17,13 @@ import Box from "../components/Box";
 import Modal from "../components/Modal";
 import { useAuthContext } from "../context/AuthContext";
 import { Status } from "../types/events";
+import { useAPIContext } from "../context/APIContext";
+import { Event as SSEEvent } from "../api/sse";
 
 const Bet: Component = () => {
 	const [auth] = useAuthContext()
+	const api = useAPIContext()
 	const [t] = useI18n()
-	const api = new API()
 
 	const [capacity, setCapacity] = createSignal(0)
 	const [amount, setAmount] = createSignal(1)
@@ -55,7 +56,7 @@ const Bet: Component = () => {
 		setShowWarning(true)
 	}
 
-	const listenInvoices = () => api.ListenInvoicesEvents((payload) => {
+	const listenInvoices = () => api.Subscribe(SSEEvent.Invoices, (payload) => {
 		if (paymentIDs.includes(payload.payment_id)) {
 			if (payload.status === Status.Success) {
 				toast.success(t("bet_sent"))
@@ -81,7 +82,7 @@ const Bet: Component = () => {
 	})
 
 	onCleanup(() => {
-		api.Abort()
+		api.Close()
 	})
 
 	return (

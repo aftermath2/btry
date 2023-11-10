@@ -1,10 +1,17 @@
+import { Emitter, Listener, createEmitter } from "@solid-primitives/event-bus";
 import { InfoPayload, InvoicesPayload, PaymentsPayload } from "../types/events";
 
 const eventSourceURL = `${import.meta.env.VITE_API_URL}/api/events?stream=events`
 
 type EventPayload = InfoPayload | InvoicesPayload | PaymentsPayload
 
-export enum EventName {
+export interface EventMap {
+	"info": InfoPayload
+	"invoices": InvoicesPayload
+	"payments": PaymentsPayload
+}
+
+export enum Event {
 	Info = "info",
 	Invoices = "invoices",
 	Payments = "payments"
@@ -13,14 +20,26 @@ export enum EventName {
 export class SSE {
 
 	private stream: EventSource
+	private eventEmitter: Emitter<EventMap>
 	// In seconds
 	private delay = 3
-	private listening: string[] = []
 
 	constructor() {
 		this.stream = new EventSource(eventSourceURL)
 		this.stream.addEventListener("error", () => this.reconnect())
 		this.stream.addEventListener("open", () => this.delay = 1)
+
+		this.eventEmitter = createEmitter()
+		this.forwardEvents()
+	}
+
+	private forwardEvents(): void {
+		for (const [_, name] of Object.entries(Event)) {
+			this.stream.addEventListener(name, (event) => {
+				const payload: EventPayload = JSON.parse(event.data)
+				this.eventEmitter.emit(name, payload)
+			})
+		}
 	}
 
 	private reconnect(): void {
@@ -37,21 +56,11 @@ export class SSE {
 		}
 	}
 
-	listen<T extends EventPayload>(eventName: EventName, onEvent: (payload: T) => void): void {
-		// Do not listen for the same event type more than once
-		if (this.listening.includes(eventName)) {
-			return
-		}
-
-		this.stream.addEventListener(eventName, (event) => {
-			const payload: T = JSON.parse(event.data)
-			onEvent(payload)
-		})
-
-		this.listening.push(eventName)
+	Subscribe<T extends Event>(event: T, callback: Listener<EventMap[T]>): void {
+		this.eventEmitter.on(event, callback)
 	}
 
-	close(): void {
-		this.stream.close()
+	Close(): void {
+		this.eventEmitter.clear()
 	}
 }

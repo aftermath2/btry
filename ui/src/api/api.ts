@@ -1,12 +1,12 @@
+import { Listener } from "@solid-primitives/event-bus";
 import {
 	GetBetsResponse, GetInfoResponse, GetInvoiceResponse,
 	GetPrizesResponse, GetWinnersResponse, LNURLWithdrawResponse, WithdrawResponse
 } from "../types/api";
-import { InfoPayload, InvoicesPayload, PaymentsPayload } from "../types/events";
 import { HTTP } from "./http";
-import { EventName, SSE } from "./sse";
+import { Event, EventMap, SSE } from "./sse";
 
-export const API_URL = `${import.meta.env.VITE_API_URL}/api`
+const API_URL = `${import.meta.env.VITE_API_URL}/api`
 
 export const getLNURLWithdrawURL = (publicKey: string, signature: string): string => {
 	return `${API_URL}/lnurl/withdraw?pubkey=${publicKey}&signature=${signature}`
@@ -14,16 +14,22 @@ export const getLNURLWithdrawURL = (publicKey: string, signature: string): strin
 
 export class API {
 
+	private sse: SSE
 	private abortController: AbortController
-	private sse?: SSE
 
 	constructor() {
+		this.sse = new SSE()
 		this.abortController = new AbortController()
 	}
 
-	Abort(): void {
+	Subscribe<T extends Event>(event: T, callback: Listener<EventMap[T]>): void {
+		this.sse.Subscribe(event, callback)
+	}
+
+	Close(): void {
+		this.sse.Close()
 		this.abortController.abort()
-		this.sse && this.sse.close()
+		this.abortController = new AbortController()
 	}
 
 	async GetBets(offset: number = 0, limit: number = 0, reverse: boolean = false): Promise<GetBetsResponse> {
@@ -88,26 +94,5 @@ export class API {
 			keepalive: true,
 			signal: this.abortController.signal
 		})
-	}
-
-	private newSSE(): void {
-		if (!this.sse) {
-			this.sse = new SSE()
-		}
-	}
-
-	ListenLotteryInfoEvents(onEvent: (payload: InfoPayload) => void): void {
-		this.newSSE()
-		this.sse && this.sse.listen<InfoPayload>(EventName.Info, onEvent)
-	}
-
-	ListenInvoicesEvents(onEvent: (payload: InvoicesPayload) => void): void {
-		this.newSSE()
-		this.sse && this.sse.listen<InvoicesPayload>(EventName.Invoices, onEvent)
-	}
-
-	ListenPaymentsEvents(onEvent: (payload: PaymentsPayload) => void): void {
-		this.newSSE()
-		this.sse && this.sse.listen<PaymentsPayload>(EventName.Payments, onEvent)
 	}
 }

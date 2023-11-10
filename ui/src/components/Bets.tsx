@@ -6,8 +6,9 @@ import Loading from "./Loading";
 import Box from "./Box";
 import NoItems from "./NoItems";
 import Table from "./Table";
-import { API } from "../api/api";
 import { Status } from "../types/events";
+import { useAPIContext } from "../context/APIContext";
+import { Event } from "../api/sse";
 
 interface Props {
 	limit: number
@@ -16,8 +17,8 @@ interface Props {
 }
 
 const Bets: Component<Props> = (props) => {
+	const api = useAPIContext()
 	const [t] = useI18n()
-	const api = new API()
 
 	const getBets = async (): Promise<Bet[]> => {
 		const resp = await api.GetBets(0, props.limit, true)
@@ -34,7 +35,7 @@ const Bets: Component<Props> = (props) => {
 	)
 
 	onMount(() => {
-		api.ListenInvoicesEvents((payload) => {
+		api.Subscribe(Event.Invoices, (payload) => {
 			if (payload.status !== Status.Success) {
 				return
 			}
@@ -46,12 +47,12 @@ const Bets: Component<Props> = (props) => {
 				public_key: payload.public_key,
 				tickets: payload.amount,
 			}
-			betsOptions.mutate((bets) => bets && [newBet, ...bets.slice(0, 8)])
+			betsOptions.mutate((bets) => bets && [newBet, ...bets.slice(0, props.limit)])
 		})
 	})
 
 	onCleanup(() => {
-		api.Abort()
+		api.Close()
 	})
 
 	return (

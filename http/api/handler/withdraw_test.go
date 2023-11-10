@@ -18,7 +18,8 @@ import (
 
 const (
 	validPublicKey = "e68b99fc5f60c971926fdc3a3af38ccf67e6f4306ab1c388735533e7c5dcc749"
-	validSignature = "b347d0accfdc0e9446921c9d61699432826c4d552201d35f5e81482ea0d7d8ecbc99e10c0c590858d44389a49bccd20c7c2f414f88230d418a2be43157336005"
+	validSignature = "b347d0accfdc0e9446921c9d61699432826c4d552201d35f5e81482ea0d7d8ecbc99e10c0c5" +
+		"90858d44389a49bccd20c7c2f414f88230d418a2be43157336005"
 )
 
 func (h *HandlerSuite) TestWithdraw() {
@@ -48,7 +49,8 @@ func (h *HandlerSuite) TestWithdraw() {
 	h.lndMock.On("PayInvoice", ctx, invoice, fee, false).Return(nil, nil)
 
 	paymentID := uint64(789)
-	h.eventStreamerMock.On("TrackPayment", invoice.PaymentHash, validPublicKey, withdrawAmount).Return(paymentID)
+	h.eventStreamerMock.On("TrackPayment", invoice.PaymentHash, validPublicKey, withdrawAmount).
+		Return(paymentID)
 
 	h.handler.Withdraw(h.rec, h.req)
 
@@ -72,7 +74,8 @@ func (h *HandlerSuite) TestWithdrawInvalidParameters() {
 		{
 			desc:      "Invalid public key/signature",
 			publicKey: "470541ae525b58f98160e5d85a20697e16096020b833b84fb394e0099c874736",
-			signature: "df26b9f6e916a57a2493dd18230a7d3071ade982eae2d40e41ae328a0ea9c1654395a2d8cceef9927c60a9bc8dfdf319e30f7945660fb84740c6155b8855f60c",
+			signature: "df26b9f6e916a57a2493dd18230a7d3071ade982eae2d40e41ae328a0ea9c1654395a2d8c" +
+				"ceef9927c60a9bc8dfdf319e30f7945660fb84740c6155b8855f60c",
 		},
 		{
 			desc:      "Empty public key",
@@ -240,6 +243,10 @@ func (h *HandlerSuite) TestWithdrawPayInvoiceError() {
 
 	withdrawAmount := uint64(invoice.NumSatoshis + fee)
 	h.winnersMock.On("ClaimPrizes", validPublicKey, withdrawAmount).Return(nil)
+
+	paymentID := uint64(654)
+	h.eventStreamerMock.On("TrackPayment", invoice.PaymentHash, validPublicKey, withdrawAmount).
+		Return(paymentID)
 
 	expectedErr := errors.New("test err")
 	h.lndMock.On("PayInvoice", ctx, invoice, fee, false).Return(nil, expectedErr)

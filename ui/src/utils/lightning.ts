@@ -33,7 +33,7 @@ export const ValidateInvoice = (invoice: string, targetAmount?: number, maxAmoun
 	try {
 		const decodedInvoice = decode(invoice);
 
-		const amountSat = Math.floor(decodedInvoice.sections[2].value / 1000);
+		const amountSat = Math.round(decodedInvoice.sections[2].value / 1000);
 		if (!amountSat) {
 			throw errInvalidAmount
 		}
@@ -46,11 +46,10 @@ export const ValidateInvoice = (invoice: string, targetAmount?: number, maxAmoun
 			throw errAmountTooHigh
 		}
 
-		if (decodedInvoice.sections[7].value <= Math.floor(Date.now() / 1000) &&
-			import.meta.env.VITE_BOLT11_PREFIX !== 'lnbcrt') {
+		const expireDate = decodedInvoice.sections[4].value + decodedInvoice.expiry
+		if (expireDate <= Math.floor(Date.now() / 1000)) {
 			throw errExpiredInvoice
 		}
-
 	} catch (error) {
 		throw error
 	}

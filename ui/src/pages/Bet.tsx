@@ -59,7 +59,7 @@ const Bet: Component = () => {
 	const listenInvoices = () => api.Subscribe(SSEEvent.Invoices, (payload) => {
 		if (paymentIDs.includes(payload.payment_id)) {
 			if (payload.status === Status.Success) {
-				toast.success(t("bet_sent"))
+				toast.success(t("bet_sent"), { duration: 3000 })
 				setShowInvoice(false)
 			}
 			// Remove payment ID from the array

@@ -11,7 +11,7 @@ export const HandleError = (fn: () => Promise<void>) => {
 		try {
 			return await fn()
 		} catch (error: any) {
-			toast.error(error.message)
+			toast.error(error.message, { duration: 3000 })
 		}
 	}
 }

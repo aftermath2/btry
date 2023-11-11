@@ -95,7 +95,7 @@ const Withdraw: Component = () => {
 			loading: t("withdrawal_request_sent"),
 			success: (_) => <span>{t("withdrawal_success")}</span>,
 			error: (payload) => <span>{t("withdrawal_failed")}: {payload.error}</span>
-		})
+		}, { unmountDelay: 3000 })
 		refetch()
 
 		// Reset input fields

@@ -54,7 +54,7 @@ const Winners: Component<Props> = (props) => {
 				winnersOptions.mutate(payload.winners)
 				for (let winner of payload.winners) {
 					if (winner.public_key === auth().publicKey) {
-						toast.success(t("congratulations", { prizes: BeautifyNumber(winner.prizes) }))
+						toast.success(t("congratulations", { prizes: BeautifyNumber(winner.prizes) }), { "duration": 3000 })
 					}
 				}
 			}

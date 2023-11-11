@@ -27,7 +27,7 @@ func TestLogger(t *testing.T) {
 	logger, err := middleware.NewLogger(config)
 	assert.NoError(t, err)
 
-	handler := logger.Log((&noopHandler{}))
+	handler := logger.Log((&okHandler{}))
 	reader := bufio.NewReader(file)
 
 	t.Run("Standard path", func(t *testing.T) {
@@ -53,4 +53,10 @@ func TestLogger(t *testing.T) {
 		expectedLogEnd := fmt.Sprintf("%s %s\n", method, path)
 		assert.True(t, strings.HasSuffix(log, expectedLogEnd))
 	})
+}
+
+type okHandler struct{}
+
+func (h *okHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }

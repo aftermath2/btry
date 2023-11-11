@@ -1,4 +1,5 @@
-import { Component, JSX, Show, createResource, createSignal, on, onCleanup } from 'solid-js';
+import { Component, JSX, Show, createResource, createSignal, onCleanup, onMount } from 'solid-js';
+import { createStore } from "solid-js/store";
 import { useI18n } from "@solid-primitives/i18n";
 import toast from "solid-toast";
 
@@ -15,7 +16,7 @@ import QRCode from "../components/QRCode";
 import Loading from "../components/Loading";
 import Container from "../components/Container";
 import Box from "../components/Box";
-import { PaymentsPayload, Status } from "../types/events";
+import { Status } from "../types/events";
 import satoshiIcon from "../assets/icons/satoshi.svg"
 import { useAPIContext } from "../context/APIContext";
 import { Event as SSEEvent } from "../api/sse";
@@ -30,7 +31,7 @@ const Withdraw: Component = () => {
 
 	const [invoice, setInvoice] = createSignal("")
 	const [fee, setFee] = createSignal(1)
-	const [paymentIDs, setPaymentIDs] = createSignal<number[]>([])
+	const [paymentIDs, setPaymentIDs] = createStore<number[]>([])
 
 	const getPrizes = async (): Promise<number> => {
 		const resp = await api.GetPrizes()
@@ -55,22 +56,6 @@ const Withdraw: Component = () => {
 		setInvoice(invoice)
 	}
 
-	const listenPayments = () => new Promise<PaymentsPayload>((resolve, reject) => {
-		api.Subscribe(SSEEvent.Payments, (payload) => {
-			if (paymentIDs().includes(payload.payment_id)) {
-				if (payload.status === Status.Success) {
-					resolve(payload)
-				} else {
-					reject(payload)
-					refetch()
-				}
-
-				// Remove payment ID from the array
-				setPaymentIDs(paymentIDs().filter(id => id !== payload.payment_id))
-			}
-		})
-	})
-
 	const withdraw = async (): Promise<void> => {
 		const availablePrizes = prizes() || 0
 		if (availablePrizes === 0) {
@@ -89,19 +74,31 @@ const Withdraw: Component = () => {
 
 		const signature = await Sign(auth().privateKey, auth().publicKey)
 		const resp = await api.Withdraw(signature, invoice(), auth().publicKey, fee())
-		setPaymentIDs([...paymentIDs(), resp.payment_id])
+		setPaymentIDs(paymentIDs.length, resp.payment_id)
 
-		toast.promise(listenPayments(), {
-			loading: t("withdrawal_request_sent"),
-			success: (_) => <span>{t("withdrawal_success")}</span>,
-			error: (payload) => <span>{t("withdrawal_failed")}: {payload.error}</span>
-		}, { unmountDelay: 3000 })
+		toast.loading(t("withdrawal_request_sent"), { duration: 2000 })
 		refetch()
 
 		// Reset input fields
 		setFee(1)
 		setInvoice("")
 	}
+
+	onMount(() => {
+		api.Subscribe(SSEEvent.Payments, (payload) => {
+			if (paymentIDs.includes(payload.payment_id)) {
+				if (payload.status === Status.Success) {
+					toast.success(t("withdrawal_success"), { duration: 3000 })
+				} else {
+					toast.error(`${t("withdrawal_failed")}: ${payload.error}}`, { duration: 3000 })
+					refetch()
+				}
+
+				// Remove payment ID from the array
+				setPaymentIDs(paymentIDs.filter(id => id !== payload.payment_id))
+			}
+		})
+	})
 
 	onCleanup(() => {
 		api.Close()

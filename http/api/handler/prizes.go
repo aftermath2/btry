@@ -1,8 +1,6 @@
 package handler
 
-import (
-	"net/http"
-)
+import "net/http"
 
 // PrizesResponse contains a number representing a user's total prizes.
 type PrizesResponse struct {

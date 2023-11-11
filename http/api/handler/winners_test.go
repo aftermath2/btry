@@ -9,6 +9,7 @@ import (
 
 	"github.com/aftermath2/BTRY/db"
 	"github.com/aftermath2/BTRY/http/api/handler"
+
 	"github.com/pkg/errors"
 )
 

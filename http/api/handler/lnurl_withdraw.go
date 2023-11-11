@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/aftermath2/BTRY/crypto"
+
 	"github.com/fiatjaf/go-lnurl"
 	"github.com/pkg/errors"
 )

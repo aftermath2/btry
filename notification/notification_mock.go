@@ -1,8 +1,6 @@
 package notification
 
-import (
-	"github.com/stretchr/testify/mock"
-)
+import "github.com/stretchr/testify/mock"
 
 // NotifierMock is a mocked implementation of a notifier.
 type NotifierMock struct {

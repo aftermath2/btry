@@ -29,7 +29,7 @@ const App: Component = () => {
 		})
 	}
 
-	onMount(async () => {
+	onMount(() => {
 		if (auth().privateKey === "") {
 			createKeyPair()
 		}

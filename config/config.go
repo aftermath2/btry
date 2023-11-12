@@ -41,7 +41,7 @@ type API struct {
 type DB struct {
 	Path            string        `yaml:"path"`
 	Logger          Logger        `yaml:"logger"`
-	MaxIdleConns    int           `yaml:"max_idle_conss"`
+	MaxIdleConns    int           `yaml:"max_idle_conns"`
 	ConnMaxIdleTime time.Duration `yaml:"conn_max_idle_time"`
 }
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/aftermath2/BTRY/http/api/handler"
 	"github.com/aftermath2/BTRY/lottery"
+
 	"github.com/pkg/errors"
 )
 

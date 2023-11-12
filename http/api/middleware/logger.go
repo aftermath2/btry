@@ -34,7 +34,7 @@ func (l *Logger) Log(next http.Handler) http.Handler {
 
 		lrw := newLoggingResponseWriter(w)
 		t := time.Now().UTC()
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(lrw, r)
 		latency := time.Since(t)
 
 		l.logger.Infof("[%d] %s %s - %dms",
@@ -48,7 +48,7 @@ type loggingResponseWriter struct {
 }
 
 func newLoggingResponseWriter(w http.ResponseWriter) *loggingResponseWriter {
-	return &loggingResponseWriter{w, http.StatusOK}
+	return &loggingResponseWriter{ResponseWriter: w}
 }
 
 // WriteHeader captures the status code to be able to log it after the response has been sent.

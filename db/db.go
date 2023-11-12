@@ -27,7 +27,7 @@ func Open(config config.DB) (*DB, error) {
 		return nil, err
 	}
 
-	db, err := sql.Open("sqlite", config.Path)
+	db, err := sql.Open("sqlite", config.Path+"?_pragma=busy_timeout=5000")
 	if err != nil {
 		return nil, errors.Wrap(err, "opening database")
 	}

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/aftermath2/BTRY/http/api/handler"
+
 	"github.com/pkg/errors"
 )
 

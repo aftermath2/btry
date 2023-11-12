@@ -56,22 +56,10 @@ const Bet: Component = () => {
 		setShowWarning(true)
 	}
 
-	const listenInvoices = () => api.Subscribe(SSEEvent.Invoices, (payload) => {
-		if (paymentIDs.includes(payload.payment_id)) {
-			if (payload.status === Status.Success) {
-				toast.success(t("bet_sent"))
-				setShowInvoice(false)
-			}
-			// Remove payment ID from the array
-			setPaymentIDs(paymentIDs.filter(id => id !== payload.payment_id))
-		}
-	})
-
 	const handleBet = async (): Promise<void> => {
 		const resp = await getInvoice(amount())
 		setInvoice(resp.invoice)
-		setPaymentIDs([...paymentIDs, resp.payment_id])
-		listenInvoices()
+		setPaymentIDs(paymentIDs.length, resp.payment_id)
 
 		// Reset input field
 		setAmount(1)
@@ -79,6 +67,16 @@ const Bet: Component = () => {
 
 	onMount(() => {
 		getLotteryCapacity()
+		api.Subscribe(SSEEvent.Invoices, (payload) => {
+			if (paymentIDs.includes(payload.payment_id)) {
+				if (payload.status === Status.Success) {
+					toast.success(t("bet_sent"), { duration: 3000 })
+					setShowInvoice(false)
+				}
+				// Remove payment ID from the array
+				setPaymentIDs(paymentIDs.filter(id => id !== payload.payment_id))
+			}
+		})
 	})
 
 	onCleanup(() => {

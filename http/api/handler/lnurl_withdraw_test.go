@@ -8,6 +8,7 @@ import (
 	"net/url"
 
 	"github.com/aftermath2/BTRY/http/api/handler"
+
 	"github.com/fiatjaf/go-lnurl"
 	"github.com/pkg/errors"
 )

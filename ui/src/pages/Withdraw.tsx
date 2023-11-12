@@ -1,4 +1,5 @@
-import { Component, JSX, Show, createResource, createSignal, on, onCleanup } from 'solid-js';
+import { Component, JSX, Show, createResource, createSignal, onCleanup, onMount } from 'solid-js';
+import { createStore } from "solid-js/store";
 import { useI18n } from "@solid-primitives/i18n";
 import toast from "solid-toast";
 
@@ -10,18 +11,24 @@ import Input from "../components/Input";
 import { BeautifyNumber, NumberRegex } from "../utils/utils";
 import { HandleError } from "../utils/actions";
 import Button from "../components/Button";
-import { LNURLEncode, ValidateInvoice } from "../utils/lightning";
+import { Invoice, LNURLEncode, ValidateInvoice } from "../utils/lightning";
 import QRCode from "../components/QRCode";
 import Loading from "../components/Loading";
 import Container from "../components/Container";
 import Box from "../components/Box";
-import { PaymentsPayload, Status } from "../types/events";
+import { Status } from "../types/events";
 import satoshiIcon from "../assets/icons/satoshi.svg"
 import { useAPIContext } from "../context/APIContext";
 import { Event as SSEEvent } from "../api/sse";
 
 const errNoPrizes = Error("No prizes available to withdraw")
 const errInvalidFee = Error("Invalid fee amount")
+
+interface Payment {
+	id: number
+	hash: string
+	paid: boolean
+}
 
 const Withdraw: Component = () => {
 	const [auth] = useAuthContext()
@@ -30,13 +37,13 @@ const Withdraw: Component = () => {
 
 	const [invoice, setInvoice] = createSignal("")
 	const [fee, setFee] = createSignal(1)
-	const [paymentIDs, setPaymentIDs] = createSignal<number[]>([])
+	const [payments, setPayments] = createStore<Payment[]>([])
 
 	const getPrizes = async (): Promise<number> => {
 		const resp = await api.GetPrizes()
 		return resp.prizes
 	}
-	const [prizes, { refetch }] = createResource<number>(getPrizes)
+	const [prizes, prizesOptions] = createResource<number>(getPrizes)
 
 	const getLNURLWithdraw = async (): Promise<string> => {
 		const signature = await Sign(auth().privateKey, auth().publicKey)
@@ -55,22 +62,6 @@ const Withdraw: Component = () => {
 		setInvoice(invoice)
 	}
 
-	const listenPayments = () => new Promise<PaymentsPayload>((resolve, reject) => {
-		api.Subscribe(SSEEvent.Payments, (payload) => {
-			if (paymentIDs().includes(payload.payment_id)) {
-				if (payload.status === Status.Success) {
-					resolve(payload)
-				} else {
-					reject(payload)
-					refetch()
-				}
-
-				// Remove payment ID from the array
-				setPaymentIDs(paymentIDs().filter(id => id !== payload.payment_id))
-			}
-		})
-	})
-
 	const withdraw = async (): Promise<void> => {
 		const availablePrizes = prizes() || 0
 		if (availablePrizes === 0) {
@@ -81,27 +72,49 @@ const Withdraw: Component = () => {
 			throw errInvalidFee
 		}
 
+		let inv: Invoice
 		try {
-			ValidateInvoice(invoice(), undefined, availablePrizes - fee())
+			inv = ValidateInvoice(invoice(), undefined, availablePrizes - fee())
+
+			if (payments.some(payment => payment.hash === inv.paymentHash && payment.paid)) {
+				throw Error("already paid")
+			}
 		} catch (error: any) {
 			throw Error("Invalid invoice: " + error.message)
 		}
 
 		const signature = await Sign(auth().privateKey, auth().publicKey)
 		const resp = await api.Withdraw(signature, invoice(), auth().publicKey, fee())
-		setPaymentIDs([...paymentIDs(), resp.payment_id])
-
-		toast.promise(listenPayments(), {
-			loading: t("withdrawal_request_sent"),
-			success: (_) => <span>{t("withdrawal_success")}</span>,
-			error: (payload) => <span>{t("withdrawal_failed")}: {payload.error}</span>
+		setPayments(payments.length, {
+			id: resp.payment_id,
+			hash: inv.paymentHash,
+			paid: false
 		})
-		refetch()
 
-		// Reset input fields
+		toast.loading(t("withdrawal_request_sent"), { duration: 2000 })
+
+		// Update available funds and input fields
+		prizesOptions.mutate(availablePrizes - fee() - inv.amountSat)
 		setFee(1)
 		setInvoice("")
 	}
+
+	onMount(() => {
+		api.Subscribe(SSEEvent.Payments, (payload) => {
+			const idx = payments.findIndex(payment => payment.id === payload.payment_id)
+			if (idx === -1) {
+				return
+			}
+
+			if (payload.status === Status.Success) {
+				toast.success(t("withdrawal_success"), { duration: 3000 })
+				setPayments(idx, 'paid', true)
+			} else {
+				toast.error(`${t("withdrawal_failed")}: ${payload.error}}`, { duration: 3000 })
+				prizesOptions.refetch()
+			}
+		})
+	})
 
 	onCleanup(() => {
 		api.Close()

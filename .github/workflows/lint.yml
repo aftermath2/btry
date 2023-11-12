@@ -4,9 +4,11 @@ on:
     branches:
       - "master"
   pull_request:
-    paths-ignore:
-      - "ui/**"
-      - "docker/**"
+    paths:
+      - '.github/workflows/server-unit-tests.yml'
+      - "**.go"
+      - "go.mod"
+      - "go.sum"
 
 jobs:
   server:

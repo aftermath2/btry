@@ -76,12 +76,12 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	paymentID := h.eventStreamer.TrackPayment(invoice.PaymentHash, publicKey, withdrawAmount)
+
 	if _, err := h.lnd.PayInvoice(ctx, invoice, int64(fee), false); err != nil {
 		sendLNURLError(w, http.StatusInternalServerError, err)
 		return
 	}
-
-	paymentID := h.eventStreamer.TrackPayment(invoice.PaymentHash, publicKey, withdrawAmount)
 
 	resp := WithdrawResponse{
 		PaymentID: paymentID,

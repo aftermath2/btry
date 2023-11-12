@@ -23,13 +23,10 @@
 	"dependencies": {
 		"@noble/ed25519": "^2.0.0",
 		"@scure/base": "^1.1.3",
-		"@solid-primitives/event-bus": "^1.0.8",
 		"@solid-primitives/i18n": "^1.4.0",
 		"@solidjs/router": "^0.8.3",
 		"bignumber.js": "^9.1.2",
-		"crypto": "^1.0.1",
 		"light-bolt11-decoder": "^3.0.0",
-		"sha256": "^0.2.0",
 		"solid-dismiss": "^1.7.121",
 		"solid-js": "^1.8.5",
 		"solid-qr-code": "^0.0.8",

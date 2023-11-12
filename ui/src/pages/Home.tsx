@@ -12,7 +12,6 @@ import Container from "../components/Container";
 import { Status } from "../types/events";
 import Sats from "../components/Sats";
 import { useAPIContext } from "../context/APIContext";
-import { Event } from "../api/sse";
 
 const numPrizes = 8
 
@@ -48,7 +47,7 @@ const Home: Component = () => {
 	createEffect(() => {
 		updateTimer()
 
-		api.Subscribe(Event.Info, (payload) => {
+		api.Subscribe("info", (payload) => {
 			const updatedInfo: LotteryInfo = {
 				prize_pool: payload.prize_pool,
 				capacity: payload.capacity
@@ -57,7 +56,7 @@ const Home: Component = () => {
 			setResetBets(!resetBets())
 		})
 
-		api.Subscribe(Event.Invoices, (payload) => {
+		api.Subscribe("invoices", (payload) => {
 			if (payload.status !== Status.Success) {
 				return
 			}
@@ -71,7 +70,7 @@ const Home: Component = () => {
 			}
 		})
 
-		api.Subscribe(Event.Payments, (payload) => payload.status === Status.Success && infoOptions.refetch())
+		api.Subscribe("payments", (payload) => payload.status === Status.Success && infoOptions.refetch())
 	})
 
 	onCleanup(() => {

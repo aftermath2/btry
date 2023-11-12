@@ -1,10 +1,9 @@
-import { Listener } from "@solid-primitives/event-bus";
 import {
 	GetBetsResponse, GetInfoResponse, GetInvoiceResponse,
 	GetPrizesResponse, GetWinnersResponse, LNURLWithdrawResponse, WithdrawResponse
 } from "../types/api";
 import { HTTP } from "./http";
-import { Event, EventMap, SSE } from "./sse";
+import { Events, SSE } from "./sse";
 
 const API_URL = `${import.meta.env.VITE_API_URL}/api`
 
@@ -22,8 +21,8 @@ export class API {
 		this.abortController = new AbortController()
 	}
 
-	Subscribe<T extends Event>(event: T, callback: Listener<EventMap[T]>): void {
-		this.sse.Subscribe(event, callback)
+	Subscribe<T extends keyof Events>(event: T, onEvent: (payload: Events[T]) => void): void {
+		this.sse.Subscribe(event, onEvent)
 	}
 
 	Close(): void {

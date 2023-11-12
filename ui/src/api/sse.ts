@@ -1,26 +1,16 @@
-import { Emitter, Listener, createEmitter } from "@solid-primitives/event-bus";
 import { InfoPayload, InvoicesPayload, PaymentsPayload } from "../types/events";
 
 const eventSourceURL = `${import.meta.env.VITE_API_URL}/api/events?stream=events`
 
-type EventPayload = InfoPayload | InvoicesPayload | PaymentsPayload
-
-export interface EventMap {
+export interface Events {
 	"info": InfoPayload
 	"invoices": InvoicesPayload
 	"payments": PaymentsPayload
 }
 
-export enum Event {
-	Info = "info",
-	Invoices = "invoices",
-	Payments = "payments"
-}
-
 export class SSE {
 
 	private stream: EventSource
-	private eventEmitter: Emitter<EventMap>
 	// In seconds
 	private delay = 3
 
@@ -28,18 +18,6 @@ export class SSE {
 		this.stream = new EventSource(eventSourceURL)
 		this.stream.addEventListener("error", () => this.reconnect())
 		this.stream.addEventListener("open", () => this.delay = 1)
-
-		this.eventEmitter = createEmitter()
-		this.forwardEvents()
-	}
-
-	private forwardEvents(): void {
-		for (const [_, name] of Object.entries(Event)) {
-			this.stream.addEventListener(name, (event) => {
-				const payload: EventPayload = JSON.parse(event.data)
-				this.eventEmitter.emit(name, payload)
-			})
-		}
 	}
 
 	private reconnect(): void {
@@ -47,8 +25,6 @@ export class SSE {
 			this.stream = new EventSource(eventSourceURL)
 			this.stream.addEventListener("error", () => this.reconnect())
 			this.stream.addEventListener("open", () => this.delay = 1)
-
-			this.forwardEvents()
 		}, this.delay * 1000)
 
 		// Increase frequency and cap at one minute 
@@ -58,11 +34,17 @@ export class SSE {
 		}
 	}
 
-	Subscribe<T extends Event>(event: T, callback: Listener<EventMap[T]>): void {
-		this.eventEmitter.on(event, callback)
+	Subscribe<T extends keyof Events>(event: T, onEvent: (payload: Events[T]) => void): void {
+		this.stream.addEventListener(event, (e) => {
+			const payload: Events[T] = JSON.parse(e.data)
+			onEvent(payload)
+		})
 	}
 
 	Close(): void {
-		this.eventEmitter.clear()
+		const events: Array<keyof Events> = ["info", "invoices", "payments"]
+		for (const event of events) {
+			this.stream.removeEventListener(event, () => { })
+		}
 	}
 }

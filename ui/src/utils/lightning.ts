@@ -2,10 +2,15 @@ import { bech32 } from "@scure/base";
 // @ts-ignore
 import { decode } from "light-bolt11-decoder";
 
-const errInvalidNetwork = Error(`invalid invoice network, it must be ${import.meta.env.VITE_NETWORK}`)
-const errExpiredInvoice = Error("invoice already expired")
-const errInvalidAmount = Error("invalid invoice amount")
-const errAmountTooHigh = Error("invoice amount is higher than available prizes")
+const errInvalidNetwork = Error(`network must be ${import.meta.env.VITE_NETWORK}`)
+const errExpiredInvoice = Error("already expired")
+const errInvalidAmount = Error("invalid amount")
+const errAmountTooHigh = Error("amount is higher than available prizes")
+
+export interface Invoice {
+	paymentHash: string
+	amountSat: number
+}
 
 /**
  * LNURLEncode takes a normal URL and returns its LNURL encoded version
@@ -21,28 +26,31 @@ export const LNURLEncode = (url: string): string => {
 /**
  * ValidateInvoice throws an error if the provided invoice is invalid.
  * 
- * @param invoice payment request
+ * @param payReq payment request
  * @param targetAmount exact invoice amount in sats expected
  * @param maxAmount maximum invoice amount in sats expected
  */
-export const ValidateInvoice = (invoice: string, targetAmount?: number, maxAmount?: number) => {
-	if (!invoice.startsWith(import.meta.env.VITE_BOLT11_PREFIX)) {
+export const ValidateInvoice = (payReq: string, targetAmount?: number, maxAmount?: number): Invoice => {
+	if (!payReq.startsWith(import.meta.env.VITE_BOLT11_PREFIX)) {
 		throw errInvalidNetwork
 	}
 
 	try {
-		const decodedInvoice = decode(invoice);
+		const decodedInvoice = decode(payReq);
+		const invoice: Invoice = {
+			amountSat: decodedInvoice.sections[2].value / 1000,
+			paymentHash: decodedInvoice.payment_hash
+		}
 
-		const amountSat = Math.round(decodedInvoice.sections[2].value / 1000);
-		if (!amountSat) {
+		if (!invoice.amountSat) {
 			throw errInvalidAmount
 		}
 
-		if (targetAmount && amountSat !== targetAmount) {
+		if (targetAmount && invoice.amountSat !== targetAmount) {
 			throw errInvalidAmount
 		}
 
-		if (maxAmount && amountSat > maxAmount) {
+		if (maxAmount && invoice.amountSat > maxAmount) {
 			throw errAmountTooHigh
 		}
 
@@ -50,6 +58,8 @@ export const ValidateInvoice = (invoice: string, targetAmount?: number, maxAmoun
 		if (expireDate <= Math.floor(Date.now() / 1000)) {
 			throw errExpiredInvoice
 		}
+
+		return invoice
 	} catch (error) {
 		throw error
 	}

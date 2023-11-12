@@ -13,7 +13,6 @@ import { BeautifyNumber } from "../utils/utils";
 import { HandleError } from "../utils/actions";
 import { useAuthContext } from "../context/AuthContext";
 import { useAPIContext } from "../context/APIContext";
-import { Event } from "../api/sse";
 
 interface Props {
 	showPagination?: boolean
@@ -49,7 +48,7 @@ const Winners: Component<Props> = (props) => {
 			return
 		}
 
-		api.Subscribe(Event.Info, (payload) => {
+		api.Subscribe("info", (payload) => {
 			if (payload.winners !== undefined) {
 				winnersOptions.mutate(payload.winners)
 				for (let winner of payload.winners) {

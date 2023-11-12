@@ -18,7 +18,6 @@ import Modal from "../components/Modal";
 import { useAuthContext } from "../context/AuthContext";
 import { Status } from "../types/events";
 import { useAPIContext } from "../context/APIContext";
-import { Event as SSEEvent } from "../api/sse";
 
 const Bet: Component = () => {
 	const [auth] = useAuthContext()
@@ -67,7 +66,7 @@ const Bet: Component = () => {
 
 	onMount(() => {
 		getLotteryCapacity()
-		api.Subscribe(SSEEvent.Invoices, (payload) => {
+		api.Subscribe("invoices", (payload) => {
 			if (paymentIDs.includes(payload.payment_id)) {
 				if (payload.status === Status.Success) {
 					toast.success(t("bet_sent"), { duration: 3000 })

@@ -19,7 +19,6 @@ import Box from "../components/Box";
 import { Status } from "../types/events";
 import satoshiIcon from "../assets/icons/satoshi.svg"
 import { useAPIContext } from "../context/APIContext";
-import { Event as SSEEvent } from "../api/sse";
 
 const errNoPrizes = Error("No prizes available to withdraw")
 const errInvalidFee = Error("Invalid fee amount")
@@ -100,7 +99,7 @@ const Withdraw: Component = () => {
 	}
 
 	onMount(() => {
-		api.Subscribe(SSEEvent.Payments, (payload) => {
+		api.Subscribe("payments", (payload) => {
 			const idx = payments.findIndex(payment => payment.id === payload.payment_id)
 			if (idx === -1) {
 				return

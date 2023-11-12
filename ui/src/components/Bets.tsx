@@ -8,7 +8,6 @@ import NoItems from "./NoItems";
 import Table from "./Table";
 import { Status } from "../types/events";
 import { useAPIContext } from "../context/APIContext";
-import { Event } from "../api/sse";
 
 interface Props {
 	limit: number
@@ -35,7 +34,7 @@ const Bets: Component<Props> = (props) => {
 	)
 
 	onMount(() => {
-		api.Subscribe(Event.Invoices, (payload) => {
+		api.Subscribe("invoices", (payload) => {
 			if (payload.status !== Status.Success) {
 				return
 			}

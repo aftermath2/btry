@@ -11,7 +11,7 @@ import Input from "../components/Input";
 import { BeautifyNumber, NumberRegex } from "../utils/utils";
 import { HandleError } from "../utils/actions";
 import Button from "../components/Button";
-import { LNURLEncode, ValidateInvoice } from "../utils/lightning";
+import { Invoice, LNURLEncode, ValidateInvoice } from "../utils/lightning";
 import QRCode from "../components/QRCode";
 import Loading from "../components/Loading";
 import Container from "../components/Container";
@@ -24,6 +24,12 @@ import { Event as SSEEvent } from "../api/sse";
 const errNoPrizes = Error("No prizes available to withdraw")
 const errInvalidFee = Error("Invalid fee amount")
 
+interface Payment {
+	id: number
+	hash: string
+	paid: boolean
+}
+
 const Withdraw: Component = () => {
 	const [auth] = useAuthContext()
 	const api = useAPIContext()
@@ -31,13 +37,13 @@ const Withdraw: Component = () => {
 
 	const [invoice, setInvoice] = createSignal("")
 	const [fee, setFee] = createSignal(1)
-	const [paymentIDs, setPaymentIDs] = createStore<number[]>([])
+	const [payments, setPayments] = createStore<Payment[]>([])
 
 	const getPrizes = async (): Promise<number> => {
 		const resp = await api.GetPrizes()
 		return resp.prizes
 	}
-	const [prizes, { refetch }] = createResource<number>(getPrizes)
+	const [prizes, prizesOptions] = createResource<number>(getPrizes)
 
 	const getLNURLWithdraw = async (): Promise<string> => {
 		const signature = await Sign(auth().privateKey, auth().publicKey)
@@ -66,36 +72,46 @@ const Withdraw: Component = () => {
 			throw errInvalidFee
 		}
 
+		let inv: Invoice
 		try {
-			ValidateInvoice(invoice(), undefined, availablePrizes - fee())
+			inv = ValidateInvoice(invoice(), undefined, availablePrizes - fee())
+
+			if (payments.some(payment => payment.hash === inv.paymentHash && payment.paid)) {
+				throw Error("already paid")
+			}
 		} catch (error: any) {
 			throw Error("Invalid invoice: " + error.message)
 		}
 
 		const signature = await Sign(auth().privateKey, auth().publicKey)
 		const resp = await api.Withdraw(signature, invoice(), auth().publicKey, fee())
-		setPaymentIDs(paymentIDs.length, resp.payment_id)
+		setPayments(payments.length, {
+			id: resp.payment_id,
+			hash: inv.paymentHash,
+			paid: false
+		})
 
 		toast.loading(t("withdrawal_request_sent"), { duration: 2000 })
-		refetch()
 
-		// Reset input fields
+		// Update available funds and input fields
+		prizesOptions.mutate(availablePrizes - fee() - inv.amountSat)
 		setFee(1)
 		setInvoice("")
 	}
 
 	onMount(() => {
 		api.Subscribe(SSEEvent.Payments, (payload) => {
-			if (paymentIDs.includes(payload.payment_id)) {
-				if (payload.status === Status.Success) {
-					toast.success(t("withdrawal_success"), { duration: 3000 })
-				} else {
-					toast.error(`${t("withdrawal_failed")}: ${payload.error}}`, { duration: 3000 })
-					refetch()
-				}
+			const idx = payments.findIndex(payment => payment.id === payload.payment_id)
+			if (idx === -1) {
+				return
+			}
 
-				// Remove payment ID from the array
-				setPaymentIDs(paymentIDs.filter(id => id !== payload.payment_id))
+			if (payload.status === Status.Success) {
+				toast.success(t("withdrawal_success"), { duration: 3000 })
+				setPayments(idx, 'paid', true)
+			} else {
+				toast.error(`${t("withdrawal_failed")}: ${payload.error}}`, { duration: 3000 })
+				prizesOptions.refetch()
 			}
 		})
 	})

@@ -26,7 +26,6 @@
 		"@solid-primitives/i18n": "^1.4.0",
 		"@solidjs/router": "^0.8.3",
 		"bignumber.js": "^9.1.2",
-		"crypto": "^1.0.1",
 		"light-bolt11-decoder": "^3.0.0",
 		"solid-dismiss": "^1.7.121",
 		"solid-js": "^1.8.5",

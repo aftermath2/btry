@@ -26,7 +26,6 @@ const errInvalidFee = Error("Invalid fee amount")
 interface Payment {
 	id: number
 	hash: string
-	paid: boolean
 }
 
 const Withdraw: Component = () => {
@@ -75,8 +74,8 @@ const Withdraw: Component = () => {
 		try {
 			inv = ValidateInvoice(invoice(), undefined, availablePrizes - fee())
 
-			if (payments.some(payment => payment.hash === inv.paymentHash && payment.paid)) {
-				throw Error("already paid")
+			if (payments.some(payment => payment.hash === inv.paymentHash)) {
+				throw Error("already used")
 			}
 		} catch (error: any) {
 			throw Error("Invalid invoice: " + error.message)
@@ -87,7 +86,6 @@ const Withdraw: Component = () => {
 		setPayments(payments.length, {
 			id: resp.payment_id,
 			hash: inv.paymentHash,
-			paid: false
 		})
 
 		toast.loading(t("withdrawal_request_sent"), { duration: 2000 })
@@ -100,17 +98,17 @@ const Withdraw: Component = () => {
 
 	onMount(() => {
 		api.Subscribe("payments", (payload) => {
-			const idx = payments.findIndex(payment => payment.id === payload.payment_id)
-			if (idx === -1) {
+			if (!payments.some(payment => payment.id === payload.payment_id)) {
 				return
 			}
 
 			if (payload.status === Status.Success) {
 				toast.success(t("withdrawal_success"), { duration: 3000 })
-				setPayments(idx, 'paid', true)
 			} else {
 				toast.error(`${t("withdrawal_failed")}: ${payload.error}}`, { duration: 3000 })
 				prizesOptions.refetch()
+				// Remove payment from the array so the same invoice can be used
+				setPayments(payments.filter(payment => payment.id !== payload.payment_id))
 			}
 		})
 	})

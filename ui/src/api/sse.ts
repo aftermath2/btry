@@ -47,6 +47,8 @@ export class SSE {
 			this.stream = new EventSource(eventSourceURL)
 			this.stream.addEventListener("error", () => this.reconnect())
 			this.stream.addEventListener("open", () => this.delay = 1)
+
+			this.forwardEvents()
 		}, this.delay * 1000)
 
 		// Increase frequency and cap at one minute 

@@ -1,7 +1,7 @@
 import { etc } from "@noble/ed25519";
 
 export const NumberRegex = /[0-9]/
-export const HexRegex = /[0-9a-f]/
+export const HexRegex = /^[0-9a-fA-F]+$/
 
 /**
  * BeatufiyNumber formats a number in a way that it's easier to read.

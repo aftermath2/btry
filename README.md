@@ -1,6 +1,6 @@
 # BTRY
 
-BTRY is an accountless lottery that uses asymmetric cryptography to register bets/prizes, and the Lightning Network to send and receive payments.
+BTRY is an accountless lottery that uses asymmetric cryptography to register bets/prizes, and the Lightning Network to send and receive payments. The lotteries are:
 
 - Completely private
 - Globally available
@@ -10,15 +10,16 @@ BTRY is an accountless lottery that uses asymmetric cryptography to register bet
 
 Onion site: http://22id55jzspf3mo5duk5z4honwhqdl7ebtmkemccknmpkniytxwqzzzyd.onion
 
-> BTRY requires a browser proxied through Tor to be accessed.
+> [!Note]
+> BTRY requires a browser proxied through [Tor](https://www.torproject.org) to be accessed. It can't be accessed through clearnet.
 
 ## Lottery
 
-Users participate for the opportunity of winning the funds that were bet in the same UTC day. Winning tickets are chosen using cryptographically secure random numbers and announced at 00:00:00 UTC.
+Users participate for the opportunity of winning the funds that were bet in the same UTC day. Winning tickets are generated using cryptographically secure random numbers and announced at 00:00:00 UTC.
 
 ### Bets
 
-One payment is one bet and the number of sats is the number of tickets the user gets (1 sat = 1 ticket).
+One payment is one bet and the number of sats is the number of tickets the user gets (1 sat = 1 ticket). Bets can be as little as 1 sat and as big as the capacity available.
 
 In this lottery, ticket numbers are not chosen by the user but rather assigned sequentially. 
 
@@ -27,10 +28,6 @@ In this lottery, ticket numbers are not chosen by the user but rather assigned s
 A single ticket can win multiple prizes. All users participate for the **99.609375%** of the prize pool.
 
 ### Prizes
-
-Prizes expire after **5 days**, so make sure to withdraw them within this window. This is to avoid having liquidity locked for long periods of time, which would disable the ability of receiving more bets.
-
-> Users can opt to receive notifications through telegram in case of winning. Messaging services identifiers are stored for one week and permanently deleted after that.
 
 Prizes distribution as a percentage of the prize pool:
 
@@ -47,6 +44,10 @@ Prizes distribution as a percentage of the prize pool:
 |  |  |
 | BTRY fee | 0.390625 |
 
+Prizes expire after **5 days**, so make sure to withdraw them within this window. This is to avoid having liquidity locked for long periods of time, which would disable the ability of receiving more bets. There is an issue about [Automatic withdrawals via lightning addresses](https://github.com/aftermath2/btry/issues/11) that may help to overcome this limitation.
+
+> Users can opt to receive notifications through telegram in case of winning. Messaging services identifiers are stored for one week and permanently deleted after that.
+
 ### Authentication
 
 No account required, just an [ed25519](https://en.wikipedia.org/wiki/EdDSA#Ed25519) key pair. It can be generated randomly by the client or provided by the user, please make sure to back it up since it's the only way you can withdraw your prizes.
@@ -55,8 +56,9 @@ For higher privacy it's suggested not to re-use the same secret on different day
 
 To generate your own private key you could use this simple command
 
-```
+```console
 openssl genpkey -algorithm ed25519 -out private_key.pem
+openssl asn1parse -in private_key.pem -offset 14 | tail -c 65
 ```
 
 > [!Warning]

@@ -57,6 +57,12 @@ func NewRouter(
 	}
 	fs := http.FileServer(http.FS(uiFs))
 	mux.Mount("/", fs)
+	// Temporary workaround to handle refreshes
+	mux.Get("/bet", redirectRoot)
+	mux.Get("/bets", redirectRoot)
+	mux.Get("/winners", redirectRoot)
+	mux.Get("/withdraw", redirectRoot)
+	mux.Get("/faq", redirectRoot)
 
 	handler := handler.New(lnd, db, eventStreamer)
 	mux.Route("/api", func(r chi.Router) {
@@ -85,4 +91,8 @@ func (rr *router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (rr *router) Close() error {
 	return rr.eventStreamer.Close()
+}
+
+func redirectRoot(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/", http.StatusPermanentRedirect)
 }

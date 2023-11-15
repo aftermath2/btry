@@ -357,7 +357,7 @@ func (s *streamer) restoreFunds(rHash string, e entry) {
 
 	// We should restore the prizes only if the public key is stored as a winner
 	if _, err := s.db.Winners.GetPrizes(e.publicKey); err != nil {
-		s.logger.Error(errors.New("tried restoring prizes to a user that is not a winner"))
+		s.logger.Error("tried restoring prizes to a user that is not a winner")
 		return
 	}
 

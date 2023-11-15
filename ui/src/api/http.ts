@@ -122,7 +122,11 @@ const parseErr = async (res: Response): Promise<string> => {
 		return "404 - Not found"
 	}
 	const err: ErrResponse | LNURLErrorResponse = await res.json()
-	return JSON.stringify({ url: res.url, message: err }, null, 4)
+	if ("error" in err) {
+		return err.error
+	} else {
+		return err.reason
+	}
 }
 
 export function panic(message: string) {

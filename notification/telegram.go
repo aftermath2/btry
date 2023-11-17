@@ -82,6 +82,11 @@ func (t *telegram) processUpdate(update tg.Update) {
 		return
 	}
 
+	if _, err := t.db.Notifications.GetChatID(publicKey); err == nil {
+		t.Notify(chatID, errAlreadyEnabled)
+		return
+	}
+
 	if err := t.db.Notifications.Add(publicKey, chatID); err != nil {
 		t.Notify(chatID, errInternalError)
 		t.logger.Error(errors.Wrap(err, "adding telegram entry"))

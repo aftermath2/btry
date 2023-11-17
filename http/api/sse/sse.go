@@ -177,7 +177,7 @@ func (s *streamer) removeExpiredPayments() {
 func (s *streamer) subscribeChannelEvents(ctx context.Context) {
 	stream, err := s.lnd.SubscribeChannelEvents(ctx)
 	if err != nil {
-		s.logger.Error(errors.Wrap(err, "subscribing to channel events stream"))
+		s.logger.Fatal(errors.Wrap(err, "subscribing to channel events stream"))
 		return
 	}
 
@@ -222,7 +222,7 @@ func (s *streamer) subscribeChannelEvents(ctx context.Context) {
 func (s *streamer) subscribeInvoices(ctx context.Context) {
 	stream, err := s.lnd.SubscribeInvoices(ctx)
 	if err != nil {
-		s.logger.Error(errors.Wrap(err, "subscribing to invoices stream"))
+		s.logger.Fatal(errors.Wrap(err, "subscribing to invoices stream"))
 		return
 	}
 
@@ -258,7 +258,7 @@ func (s *streamer) subscribeInvoices(ctx context.Context) {
 func (s *streamer) subscribePayments(ctx context.Context) {
 	stream, err := s.lnd.SubscribePayments(ctx)
 	if err != nil {
-		s.logger.Error(errors.Wrap(err, "subscribing to payments stream"))
+		s.logger.Fatal(errors.Wrap(err, "subscribing to payments stream"))
 		return
 	}
 

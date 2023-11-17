@@ -115,7 +115,7 @@ func (l Logger) Errorf(format string, args ...interface{}) {
 	l.log(ERROR, fmt.Sprintf(format, args...))
 }
 
-// Fatal reports the application errors and exists.
+// Fatal reports the application errors and exits.
 func (l Logger) Fatal(args ...interface{}) {
 	l.log(FATAL, fmt.Sprint(args...))
 }

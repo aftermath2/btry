@@ -19,11 +19,12 @@ func TestProcessUpdate(t *testing.T) {
 	username := "test"
 
 	cases := []struct {
-		desc          string
-		publicKey     string
-		message       string
-		fail          bool
-		internalError bool
+		desc           string
+		publicKey      string
+		message        string
+		fail           bool
+		internalError  bool
+		alreadyEnabled bool
 	}{
 		{
 			desc:      "Welcome",
@@ -49,6 +50,12 @@ func TestProcessUpdate(t *testing.T) {
 			fail:          true,
 			internalError: true,
 		},
+		{
+			desc:           "Already enabled",
+			publicKey:      publicKey,
+			message:        errAlreadyEnabled,
+			alreadyEnabled: true,
+		},
 	}
 
 	botAPI := NewTelegramBotAPIMock()
@@ -63,6 +70,12 @@ func TestProcessUpdate(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			chatID := int64(123123)
+			if tc.alreadyEnabled {
+				notificationsMock.On("GetChatID", tc.publicKey).Return(chatID, nil).Once()
+			} else {
+				notificationsMock.On("GetChatID", tc.publicKey).
+					Return(chatID, errors.New("")).Once()
+			}
 			if !tc.fail {
 				notificationsMock.On("Add", tc.publicKey, chatID).Return(nil).Once()
 			}

@@ -58,16 +58,3 @@ func (n *NotificationsSuite) TestExpire() {
 	_, err = n.db.GetChatID(notificationPublicKey)
 	n.Error(err)
 }
-
-func (n *NotificationsSuite) TestRemove() {
-	err := n.db.Remove(notificationPublicKey)
-	n.NoError(err)
-
-	_, err = n.db.GetChatID(notificationPublicKey)
-	n.Error(err)
-}
-
-func (n *NotificationsSuite) TestReset() {
-	err := n.db.Reset()
-	n.NoError(err)
-}

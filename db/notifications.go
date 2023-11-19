@@ -17,8 +17,6 @@ type NotificationsStore interface {
 	Add(publicKey string, chatID int64) error
 	GetChatID(publicKey string) (int64, error)
 	Expire() error
-	Remove(publicKey string) error
-	Reset() error
 }
 
 type notifications struct {
@@ -77,36 +75,6 @@ func (n *notifications) Expire() error {
 	t := time.Now().Add(-NotificationExpiry).Unix()
 	if _, err := stmt.Exec(t); err != nil {
 		return errors.Wrap(err, "deleting expired notifications")
-	}
-
-	return nil
-}
-
-// Remove deletes a notification from the database.
-func (n *notifications) Remove(publicKey string) error {
-	stmt, err := n.db.Prepare("DELETE FROM notifications WHERE public_key=?")
-	if err != nil {
-		return errors.Wrap(err, "preparing statement")
-	}
-	defer stmt.Close()
-
-	if _, err := stmt.Exec(publicKey); err != nil {
-		return errors.Wrap(err, "deleting notification")
-	}
-
-	return nil
-}
-
-// Reset removes all notification entries from the database.
-func (n *notifications) Reset() error {
-	stmt, err := n.db.Prepare("DELETE FROM notifications")
-	if err != nil {
-		return errors.Wrap(err, "preparing statement")
-	}
-	defer stmt.Close()
-
-	if _, err := stmt.Exec(); err != nil {
-		return errors.Wrap(err, "deleting all notifications")
 	}
 
 	return nil

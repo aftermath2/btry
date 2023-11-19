@@ -17,6 +17,7 @@ const (
 	errInvalidMessage   = "Message not recognized. Enable notifications using `/start <public_key>` or scanning the QR code on BTRY's web client."
 	errInvalidPublicKey = "The public key %q is invalid."
 	errInternalError    = "Something went wrong. Please try again later or contact an admin."
+	errAlreadyEnabled   = "The public key already has notifications enabled"
 )
 
 // Notifier represents a service that is used to send messages to winners.

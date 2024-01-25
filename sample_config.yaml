@@ -48,6 +48,10 @@ notifier:
     label: Notifier
     out_file: logs/notifier.log
     level: 2
+  nostr:
+    private_key: private_key
+    relays:
+      - wss://nostr-pub.wellorder.net
   telegram:
     bot_api_token: bot_api_token
     bot_name: bot_name

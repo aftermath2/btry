@@ -178,6 +178,10 @@ func (l *Lottery) raffle(block *chainrpc.BlockEpoch) error {
 	l.notifyWinners(winnersMap)
 	l.tryAutoWithdrawals(block.Height, winnersMap)
 
+	if err := l.notifier.PublishWinners(winners); err != nil {
+		return err
+	}
+
 	return nil
 }
 

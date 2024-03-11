@@ -3,11 +3,9 @@ package db_test
 import (
 	"database/sql"
 	"testing"
-	"time"
 
 	database "github.com/aftermath2/BTRY/db"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -25,6 +23,8 @@ var (
 	}
 )
 
+const height uint32 = 1
+
 type WinnersSuite struct {
 	suite.Suite
 
@@ -37,9 +37,12 @@ func TestWinnersSuite(t *testing.T) {
 
 func (w *WinnersSuite) SetupTest() {
 	db := setupDB(w.T(), func(db *sql.DB) {
+		lotteriesQuery := `INSERT INTO lotteries (height) VALUES (?)`
+		_, err := db.Exec(lotteriesQuery, height)
+		w.NoError(err)
 		query := `DELETE FROM winners;
-		INSERT INTO winners (public_key, prizes, ticket, created_at) VALUES (?, ?, ?, ?);`
-		_, err := db.Exec(query, testWinner.PublicKey, testWinner.Prizes, testWinner.Ticket, 1)
+		INSERT INTO winners (public_key, prizes, ticket, lottery_height) VALUES (?, ?, ?, ?);`
+		_, err = db.Exec(query, testWinner.PublicKey, testWinner.Prizes, testWinner.Ticket, height)
 		w.NoError(err)
 	})
 	w.db = db.Winners
@@ -51,7 +54,7 @@ func (w *WinnersSuite) TestAddWinners() {
 		Prizes:    2016,
 		Ticket:    21,
 	}
-	err := w.db.Add([]database.Winner{winner})
+	err := w.db.Add(height, []database.Winner{winner})
 	w.NoError(err)
 }
 
@@ -61,7 +64,7 @@ func (w *WinnersSuite) TestAddWinnersPrizesAccumulation() {
 		Prizes:    2016,
 		Ticket:    21,
 	}
-	err := w.db.Add([]database.Winner{winner, winner, winner})
+	err := w.db.Add(height, []database.Winner{winner, winner, winner})
 	w.NoError(err)
 
 	prizes, err := w.db.GetPrizes(winner.PublicKey)
@@ -75,7 +78,7 @@ func (w *WinnersSuite) TestClaimPrizes() {
 	err := w.db.ClaimPrizes(testWinner.PublicKey, amount)
 	w.NoError(err)
 
-	winners, err := w.db.List()
+	winners, err := w.db.List(height)
 	w.NoError(err)
 
 	w.Equal(testWinner.Prizes-amount, winners[0].Prizes)
@@ -89,7 +92,8 @@ func (w *WinnersSuite) TestClaimPrizesInsufficientPrizes() {
 }
 
 func (w *WinnersSuite) TestExpirePrizes() {
-	expiredAmount, err := w.db.ExpirePrizes()
+	height := uint32(2)
+	expiredAmount, err := w.db.ExpirePrizes(height)
 	w.NoError(err)
 
 	w.Equal(testWinner.Prizes, expiredAmount)
@@ -108,7 +112,7 @@ func (w *WinnersSuite) TestGetPrizes() {
 }
 
 func (w *WinnersSuite) TestGetMultiplePrizes() {
-	err := w.db.Add([]database.Winner{testWinner2, testWinner2})
+	err := w.db.Add(height, []database.Winner{testWinner2, testWinner2})
 	w.NoError(err)
 
 	prizes, err := w.db.GetPrizes(testWinner2.PublicKey)
@@ -118,59 +122,9 @@ func (w *WinnersSuite) TestGetMultiplePrizes() {
 }
 
 func (w *WinnersSuite) TestList() {
-	winners, err := w.db.List()
+	winners, err := w.db.List(height)
 	w.NoError(err)
 
-	w.Equal(1, len(winners))
-	assertEqualWinners(w.T(), testWinner, winners[0])
-}
-
-type WinnersHistorySuite struct {
-	suite.Suite
-
-	db database.WinnersStore
-}
-
-func TestWinnersHistorySuite(t *testing.T) {
-	suite.Run(t, &WinnersHistorySuite{})
-}
-
-func (w *WinnersHistorySuite) SetupTest() {
-	db := setupDB(w.T(), func(db *sql.DB) {
-		query := `DELETE FROM winners_history;
-		INSERT INTO winners_history (public_key, prizes, ticket) VALUES (?, ?, ?);`
-		_, err := db.Exec(query, testWinner.PublicKey, testWinner.Prizes, testWinner.Ticket)
-		w.NoError(err)
-	})
-	w.db = db.Winners
-}
-
-func (w *WinnersHistorySuite) TestList() {
-	winners, err := w.db.ListHistory(0, uint64(time.Now().Unix()+1000))
-	w.NoError(err)
-
-	w.Equal(1, len(winners))
-	assertEqualWinners(w.T(), testWinner, winners[0])
-}
-
-func (w *WinnersHistorySuite) TestWrite() {
-	winner := database.Winner{
-		PublicKey: "pubKey",
-		Prizes:    2016,
-		Ticket:    21,
-	}
-	err := w.db.WriteHistory([]database.Winner{winner})
-	w.NoError(err)
-
-	winners, err := w.db.ListHistory(0, uint64(time.Now().Unix()+1000))
-	w.NoError(err)
-
-	w.Equal(2, len(winners))
-	assertEqualWinners(w.T(), winner, winners[1])
-}
-
-func assertEqualWinners(t *testing.T, expected, actual database.Winner) {
-	assert.Equal(t, expected.PublicKey, actual.PublicKey)
-	assert.Equal(t, expected.Prizes, actual.Prizes)
-	assert.Equal(t, expected.Ticket, actual.Ticket)
+	w.Len(winners, 1)
+	w.Equal(testWinner, winners[0])
 }

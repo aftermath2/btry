@@ -13,8 +13,8 @@ func NewWinnersStoreMock() *WinnersStoreMock {
 }
 
 // Add mock.
-func (w *WinnersStoreMock) Add(winners []Winner) error {
-	args := w.Called(winners)
+func (w *WinnersStoreMock) Add(height uint32, winners []Winner) error {
+	args := w.Called(height, winners)
 	return args.Error(0)
 }
 
@@ -25,43 +25,24 @@ func (w *WinnersStoreMock) ClaimPrizes(publicKey string, amount uint64) error {
 }
 
 // ExpirePrizes mock.
-func (w *WinnersStoreMock) ExpirePrizes() (uint64, error) {
-	args := w.Called()
-	prizes := args.Get(0).(uint64)
-	return prizes, args.Error(1)
+func (w *WinnersStoreMock) ExpirePrizes(height uint32) (uint64, error) {
+	args := w.Called(height)
+	return args.Get(0).(uint64), args.Error(1)
 }
 
 // GetPrizes mock.
 func (w *WinnersStoreMock) GetPrizes(publicKey string) (uint64, error) {
 	args := w.Called(publicKey)
-	prizes := args.Get(0).(uint64)
-	return prizes, args.Error(1)
+	return args.Get(0).(uint64), args.Error(1)
 }
 
 // List mock.
-func (w *WinnersStoreMock) List() ([]Winner, error) {
-	args := w.Called()
+func (w *WinnersStoreMock) List(height uint32) ([]Winner, error) {
+	args := w.Called(height)
 	var r0 []Winner
 	v0 := args.Get(0)
 	if v0 != nil {
 		r0 = v0.([]Winner)
 	}
 	return r0, args.Error(1)
-}
-
-// ListHistory mock.
-func (w *WinnersStoreMock) ListHistory(from, to uint64) ([]Winner, error) {
-	args := w.Called(from, to)
-	var r0 []Winner
-	v0 := args.Get(0)
-	if v0 != nil {
-		r0 = v0.([]Winner)
-	}
-	return r0, args.Error(1)
-}
-
-// WriteHistory mock.
-func (w *WinnersStoreMock) WriteHistory(winners []Winner) error {
-	args := w.Called(winners)
-	return args.Error(0)
 }

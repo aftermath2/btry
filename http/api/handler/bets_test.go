@@ -23,6 +23,7 @@ type HandlerSuite struct {
 	rec               *httptest.ResponseRecorder
 	req               *http.Request
 	betsMock          *db.BetsStoreMock
+	lotteriesMock     *db.LotteriesStoreMock
 	winnersMock       *db.WinnersStoreMock
 	lndMock           *lightning.ClientMock
 	handler           *handler.Handler
@@ -37,12 +38,14 @@ func (h *HandlerSuite) SetupTest() {
 	h.rec = httptest.NewRecorder()
 	h.req = httptest.NewRequest(http.MethodGet, "/", nil)
 	h.betsMock = db.NewBetsStoreMock()
+	h.lotteriesMock = db.NewLotteriesStoreMock()
 	h.winnersMock = db.NewWinnersStoreMock()
 	h.lndMock = lightning.NewClientMock()
 	h.eventStreamerMock = sse.NewStreamerMock()
 	db := &db.DB{
-		Bets:    h.betsMock,
-		Winners: h.winnersMock,
+		Bets:      h.betsMock,
+		Lotteries: h.lotteriesMock,
+		Winners:   h.winnersMock,
 	}
 	h.handler = handler.New(h.lndMock, db, h.eventStreamerMock)
 }
@@ -98,16 +101,40 @@ func (h *HandlerSuite) TestGetBetsParameters() {
 	h.betsMock.AssertExpectations(h.T())
 }
 
-func (h *HandlerSuite) TestGetBetsInvalidParameter() {
-	offset := "false"
+func (h *HandlerSuite) TestGetBetsInvalidParameters() {
+	cases := []struct {
+		desc  string
+		key   string
+		value string
+	}{
+		{
+			desc:  "Invalid offset",
+			key:   "offset",
+			value: "false",
+		},
+		{
+			desc:  "Invalid limit",
+			key:   "limit",
+			value: "false",
+		},
+		{
+			desc:  "Invalid reverse",
+			key:   "reverse",
+			value: "five",
+		},
+	}
 
-	url := url.Values{}
-	url.Add("offset", offset)
-	h.req = httptest.NewRequest(http.MethodPost, "/bets?"+url.Encode(), nil)
+	for _, tc := range cases {
+		h.Run(tc.desc, func() {
+			url := url.Values{}
+			url.Add(tc.key, tc.value)
+			h.req = httptest.NewRequest(http.MethodPost, "/bets?"+url.Encode(), nil)
 
-	h.handler.GetBets(h.rec, h.req)
+			h.handler.GetBets(h.rec, h.req)
 
-	h.Equal(http.StatusBadRequest, h.rec.Code)
+			h.Equal(http.StatusBadRequest, h.rec.Code)
+		})
+	}
 }
 
 func (h *HandlerSuite) TestGetBetsInternalError() {

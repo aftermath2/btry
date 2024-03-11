@@ -20,7 +20,8 @@ const (
 	DISABLED Level = iota
 	// DEBUG designates fine-grained informational events useful to debug an application.
 	DEBUG
-	// INFO designates informational messages that highlight the progress of the application at coarse-grained level.
+	// INFO designates informational messages that highlight the progress of the application at
+	// coarse-grained level.
 	INFO
 	// WARNING displays an alert signaling caution.
 	WARNING

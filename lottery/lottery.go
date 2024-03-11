@@ -3,12 +3,11 @@ package lottery
 
 import (
 	"context"
-	"crypto/rand"
 	"database/sql"
 	"fmt"
 	"math"
 	"math/big"
-	"time"
+	"slices"
 
 	"github.com/aftermath2/BTRY/config"
 	"github.com/aftermath2/BTRY/db"
@@ -16,7 +15,7 @@ import (
 	"github.com/aftermath2/BTRY/logger"
 	"github.com/aftermath2/BTRY/notification"
 
-	"github.com/go-co-op/gocron"
+	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	"github.com/pkg/errors"
 )
 
@@ -40,19 +39,20 @@ var prizes = [8]float64{first, second, third, fourth, fifth, sixth, seventh, eig
 
 // Info contains details about the lottery.
 type Info struct {
-	PrizePool int64 `json:"prize_pool"`
-	Capacity  int64 `json:"capacity"`
+	PrizePool  int64  `json:"prize_pool"`
+	Capacity   int64  `json:"capacity"`
+	NextHeight uint32 `json:"next_height"`
 }
 
 // Lottery is in charge of handling the lottery's logic.
 type Lottery struct {
-	logger         *logger.Logger
-	db             *db.DB
 	lnd            lightning.Client
 	notifier       notification.Notifier
-	winnersChannel chan<- []db.Winner
-	scheduler      *gocron.Scheduler
-	time           string
+	logger         *logger.Logger
+	db             *db.DB
+	winnersCh      chan<- []db.Winner
+	blocksCh       <-chan *chainrpc.BlockEpoch
+	blocksDuration uint32
 }
 
 // New returns a new Lottery object.
@@ -61,7 +61,8 @@ func New(
 	db *db.DB,
 	lnd lightning.Client,
 	notifier notification.Notifier,
-	winnersChannel chan<- []db.Winner,
+	winnersCh chan<- []db.Winner,
+	blocksCh <-chan *chainrpc.BlockEpoch,
 ) (*Lottery, error) {
 	logger, err := logger.New(config.Logger)
 	if err != nil {
@@ -69,31 +70,75 @@ func New(
 	}
 
 	return &Lottery{
+		blocksDuration: config.Duration,
 		logger:         logger,
 		db:             db,
 		lnd:            lnd,
 		notifier:       notifier,
-		winnersChannel: winnersChannel,
-		scheduler:      gocron.NewScheduler(time.UTC),
-		time:           config.Time,
+		winnersCh:      winnersCh,
+		blocksCh:       blocksCh,
 	}, nil
 }
 
 // Start executes the loop in charge of doing the periodic lottery.
-func (l *Lottery) Start() {
-	l.scheduler.Every(1).Day().At(l.time).WaitForSchedule().Do(l.jobFunc)
-	l.scheduler.StartAsync()
-}
+func (l *Lottery) Start() error {
+	ctx := context.Background()
 
-func (l *Lottery) jobFunc() {
-	l.logger.Info("Lottery started")
-
-	if err := l.raffle(); err != nil {
-		l.logger.Error(err)
+	info, err := l.lnd.GetInfo(ctx)
+	if err != nil {
+		return err
 	}
+
+	nextHeight, err := l.db.Lotteries.GetNextHeight()
+	if err != nil {
+		return err
+	}
+
+	if nextHeight == 0 || info.BlockHeight > nextHeight {
+		if nextHeight != 0 && info.BlockHeight > nextHeight {
+			// Remove next height to avoid showing one where no lottery has taken place.
+			// Means the server was down when the block was mined.
+			if err := l.db.Lotteries.DeleteHeight(nextHeight); err != nil {
+				return err
+			}
+		}
+
+		nextHeight = info.BlockHeight + l.blocksDuration
+		if err := l.db.Lotteries.AddHeight(nextHeight); err != nil {
+			return err
+		}
+	}
+
+	l.logger.Infof("Next block height target: %d", nextHeight)
+
+	go func() {
+		for {
+			block := <-l.blocksCh
+			if block.Height != nextHeight {
+				continue
+			}
+
+			// Block hash bytes are reversed, correct it
+			slices.Reverse(block.Hash)
+
+			if err := l.raffle(block); err != nil {
+				l.logger.Error(err)
+			}
+
+			// Add next lottery height
+			nextHeight += l.blocksDuration
+			if err := l.db.Lotteries.AddHeight(nextHeight); err != nil {
+				l.logger.Error(err)
+			}
+
+			l.logger.Infof("Next block height target: %d", nextHeight)
+		}
+	}()
+
+	return nil
 }
 
-func (l *Lottery) raffle() error {
+func (l *Lottery) raffle(block *chainrpc.BlockEpoch) error {
 	bets, err := l.db.Bets.List(0, 0, false)
 	if err != nil {
 		return errors.Wrap(err, "listing bets")
@@ -112,39 +157,28 @@ func (l *Lottery) raffle() error {
 		return errors.Wrap(err, "deleting bets")
 	}
 
-	winners, err := l.getWinners(prizePool, bets)
+	winners, err := l.getWinners(block.Hash, prizePool, bets)
 	if err != nil {
 		return errors.Wrap(err, "getting winners")
 	}
 
-	if err := l.db.Winners.Add(winners); err != nil {
+	if err := l.db.Winners.Add(block.Height, winners); err != nil {
 		return errors.Wrap(err, "saving winners")
 	}
-
-	if err := l.db.Winners.WriteHistory(winners); err != nil {
-		return errors.Wrap(err, "saving winners history")
-	}
-
-	l.winnersChannel <- winners
+	l.winnersCh <- winners
 
 	l.notifyWinners(winners)
 
-	expiredPrizes, err := l.db.Winners.ExpirePrizes()
+	// Expire prizes assigned more than 3 days ago
+	expiredPrizes, err := l.db.Winners.ExpirePrizes(block.Height - (l.blocksDuration * 3))
 	if err != nil {
 		return err
 	}
-
 	l.logger.Infof("Expired prizes: %d", expiredPrizes)
 
 	if err := l.db.Notifications.Expire(); err != nil {
 		return err
 	}
-
-	// TODO:
-	// Trigger loop out if there's a excess of local balance to exchange for remote
-	// Keep winners prizes and a portion of the balance to avoid draining channels
-	// Loop outs must not affect users' withdrawals reliability
-	// loopOutAmount := localBalance - winnersPrizes - 10_000_000
 
 	return nil
 }
@@ -152,54 +186,58 @@ func (l *Lottery) raffle() error {
 // getWinners looks for the target or the closest higher number using the binary search algorithm.
 //
 // The bets slice must be sorted.
-func (l *Lottery) getWinners(prizePool uint64, bets []db.Bet) ([]db.Winner, error) {
+func (l *Lottery) getWinners(blockHash []byte, prizePool uint64, bets []db.Bet) ([]db.Winner, error) {
 	if len(bets) <= 0 {
 		return nil, nil
 	}
 
-	now := time.Now()
 	winners := make([]db.Winner, 0, len(prizes))
+	i := len(blockHash) - 1
 
-	for i := 0; i < len(prizes); i++ {
-		ticket, publicKey, err := getWinner(bets)
-		if err != nil {
-			return nil, err
-		}
+	for _, prize := range prizes {
+		winningTicket := getWinningTicket(blockHash, i, prizePool)
+		p := (prize / 100) * float64(prizePool)
 
-		prize := (prizes[i] / 100) * float64(prizePool)
 		winner := db.Winner{
-			PublicKey: publicKey,
-			Ticket:    ticket,
-			Prizes:    uint64(math.Round(prize)),
-			// Set just for the clients, server-side is generated automatically by SQL
-			CreatedAt: now.Unix(),
+			PublicKey: getPublicKey(bets, winningTicket),
+			Ticket:    winningTicket,
+			Prizes:    uint64(math.Round(p)),
+			Expired:   false,
 		}
+
 		winners = append(winners, winner)
+		i -= 2
 	}
 
 	return winners, nil
 }
 
-// getWinner returns the winning ticket and the winner public key given a cryptographically
-// secure random number.
-func getWinner(bets []db.Bet) (uint64, string, error) {
-	highestIndex := int64(bets[len(bets)-1].Index)
-	targetBig, err := rand.Int(rand.Reader, big.NewInt(highestIndex))
-	if err != nil {
-		return 0, "", errors.Wrap(err, "failed generating random number")
-	}
+// getWinningTicket takes two bytes from the latest block hash to get the winning number.
+func getWinningTicket(hash []byte, i int, prizePool uint64) uint64 {
+	num1 := int64(hash[i])
+	num2 := int64(hash[i-1])
 
-	// Add 1 so 0 is not a target and the last ticket is taken into account
-	target := targetBig.Uint64() + 1
+	// (num1 ^ num2) % prizePool
+	result := new(big.Int).Exp(
+		big.NewInt(num1),
+		big.NewInt(num2),
+		big.NewInt(int64(prizePool)),
+	)
+
+	// Add one so the index zero is not taken into account and the last one is
+	return result.Uint64() + 1
+}
+
+func getPublicKey(bets []db.Bet, winningTicket uint64) string {
 	left, mid, right := 0, 0, len(bets)-1
 	for left <= right {
 		mid = (left + right) / 2
 
 		i := bets[mid].Index
-		if i == target {
-			return target, bets[mid].PublicKey, nil
+		if i == winningTicket {
+			return bets[mid].PublicKey
 		}
-		if i < target {
+		if i < winningTicket {
 			left = mid + 1
 			continue
 		}
@@ -207,8 +245,8 @@ func getWinner(bets []db.Bet) (uint64, string, error) {
 		right = mid - 1
 	}
 
-	// The left ends up being the higher value of the two, hence the user that has the target ticket
-	return target, bets[left].PublicKey, nil
+	// The left ends up being the higher value of the two, hence that user has the winning ticket
+	return bets[left].PublicKey
 }
 
 // notifyWinners sends a notification with a congratulations message to the winners if they have
@@ -252,8 +290,14 @@ func GetInfo(ctx context.Context, lnd lightning.Client, db *db.DB) (Info, error)
 		return Info{}, err
 	}
 
+	nextHeight, err := db.Lotteries.GetNextHeight()
+	if err != nil {
+		return Info{}, err
+	}
+
 	return Info{
-		PrizePool: int64(prizePool),
-		Capacity:  remoteBalance / CapacityDivisor,
+		PrizePool:  int64(prizePool),
+		Capacity:   remoteBalance / CapacityDivisor,
+		NextHeight: nextHeight,
 	}, nil
 }

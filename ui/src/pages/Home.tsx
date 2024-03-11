@@ -7,11 +7,11 @@ import Winners from "../components/Winners";
 import Bets from "../components/Bets";
 import { LotteryInfo } from "../types/lottery";
 import Loading from "../components/Loading";
-import { FormatTime } from "../utils/utils";
 import Container from "../components/Container";
 import { Status } from "../types/events";
 import Sats from "../components/Sats";
 import { useAPIContext } from "../context/APIContext";
+import { BeautifyNumber } from "../utils/utils";
 
 const numPrizes = 8
 
@@ -19,7 +19,7 @@ const Home: Component = () => {
 	const api = useAPIContext()
 	const [t] = useI18n()
 
-	const [timeLeft, setTimeLeft] = createSignal("")
+	const [nextHeight, setNextHeight] = createSignal(0)
 	const [resetBets, setResetBets] = createSignal(false)
 
 	const getLotteryInfo = async (): Promise<LotteryInfo> => {
@@ -27,33 +27,21 @@ const Home: Component = () => {
 	}
 	const [info, infoOptions] = createResource<LotteryInfo>(getLotteryInfo)
 
-	const updateTimer = () => {
-		const now = new Date()
-		const hours = 23 - now.getUTCHours()
-		const minutes = 59 - now.getUTCMinutes()
-		const seconds = 59 - now.getUTCSeconds()
-
-		if (hours + minutes + seconds <= 0) {
-			setTimeLeft("00:00:00")
-			return
-		}
-
-		const timeLeft = `${hours}:${minutes}:${seconds}`
-		setTimeLeft(FormatTime(timeLeft))
-	}
-
-	const timer = setInterval(updateTimer, 1000)
-
 	createEffect(() => {
-		updateTimer()
-
 		api.Subscribe("info", (payload) => {
-			const updatedInfo: LotteryInfo = {
-				prize_pool: payload.prize_pool,
-				capacity: payload.capacity
+			if (payload.next_height !== undefined) {
+				setNextHeight(payload.next_height)
 			}
-			infoOptions.mutate(updatedInfo)
-			setResetBets(!resetBets())
+
+			if (payload.capacity !== undefined && payload.prize_pool !== undefined) {
+				const updatedInfo: LotteryInfo = {
+					prize_pool: payload.prize_pool,
+					capacity: payload.capacity,
+					next_height: nextHeight()
+				}
+				infoOptions.mutate(updatedInfo)
+				setResetBets(!resetBets())
+			}
 		})
 
 		api.Subscribe("invoices", (payload) => {
@@ -65,7 +53,8 @@ const Home: Component = () => {
 			if (inf) {
 				infoOptions.mutate({
 					prize_pool: inf.prize_pool + payload.amount,
-					capacity: inf.capacity - payload.amount
+					capacity: inf.capacity - payload.amount,
+					next_height: inf.next_height
 				})
 			}
 		})
@@ -75,7 +64,6 @@ const Home: Component = () => {
 
 	onCleanup(() => {
 		api.Close()
-		clearInterval(timer)
 	})
 
 	return (
@@ -91,8 +79,8 @@ const Home: Component = () => {
 						<Sats num={info()?.capacity} fontSize="1.875rem" fontWeight="600" />
 					</div>
 					<div class={styles.info}>
-						<p class={`${styles.text} ${styles.time_left}`}>{t("time_left")}</p>
-						<h3 class={styles.time_left_num}>{timeLeft()}</h3>
+						<p class={`${styles.text} ${styles.block_height}`}>{t("block_height")}</p>
+						<h3 class={styles.block_height_num}>{BeautifyNumber(info()?.next_height)}</h3>
 					</div>
 				</div>
 			</Show>

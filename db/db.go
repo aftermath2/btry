@@ -18,6 +18,7 @@ type DB struct {
 	Notifications NotificationsStore
 	Bets          BetsStore
 	Winners       WinnersStore
+	Lotteries     LotteriesStore
 }
 
 // Open opens the database.
@@ -47,6 +48,7 @@ func Open(config config.DB) (*DB, error) {
 		Bets:          newBetsStore(db, logger),
 		Notifications: newNotificationsStore(db, logger),
 		Winners:       newWinnersStore(db, logger),
+		Lotteries:     newLotteriesStore(db, logger),
 	}, nil
 }
 
@@ -112,31 +114,25 @@ CREATE TABLE IF NOT EXISTS bets (
 	idx INTEGER PRIMARY KEY CHECK (idx > 0),
 	tickets INTEGER CHECK (tickets > 0),
 	public_key VARCHAR(64) NOT NULL
-) WITHOUT ROWID;
-
-CREATE TABLE IF NOT EXISTS winners (
-	public_key VARCHAR(64) PRIMARY KEY,
-	prizes INTEGER NOT NULL CHECK (prizes >= 0),
-	ticket INTEGER NOT NULL,
-	created_at INTEGER DEFAULT (unixepoch())
-) WITHOUT ROWID;
-
-CREATE TABLE IF NOT EXISTS winners_history (
-	public_key VARCHAR(64),
-	prizes INTEGER NOT NULL CHECK (prizes >= 0),
-	ticket INTEGER NOT NULL,
-	created_at INTEGER DEFAULT (unixepoch())
 );
 
-CREATE TRIGGER IF NOT EXISTS winners_history_ro_columns
-BEFORE UPDATE OF public_key, prizes, ticket, created_at ON winners_history
-BEGIN
-    SELECT raise(abort, 'updating winners history is not permitted');
-END;
+CREATE TABLE IF NOT EXISTS winners (
+	public_key VARCHAR(64) NOT NULL,
+	prizes INTEGER NOT NULL CHECK (prizes >= 0),
+	ticket INTEGER NOT NULL,
+	expired BOOLEAN DEFAULT 0 CHECK (expired IN (0, 1)),
+	lottery_height INTEGER NOT NULL,
+	FOREIGN KEY (lottery_height) REFERENCES lotteries(height),
+	PRIMARY KEY (lottery_height)
+);
 
 CREATE TABLE IF NOT EXISTS notifications (
 	public_key VARCHAR(64) PRIMARY KEY,
 	chat_id INTEGER NOT NULL,
 	service TEXT NOT NULL CHECK (service IN ('telegram')),
 	created_at INTEGER DEFAULT (unixepoch())
-) WITHOUT ROWID;`
+) WITHOUT ROWID;
+
+CREATE TABLE IF NOT EXISTS lotteries (
+	height INTEGER PRIMARY KEY CHECK (height > 0)
+);`

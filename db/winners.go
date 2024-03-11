@@ -17,13 +17,11 @@ const PrizesExpiry = time.Hour * 24 * 5
 
 // WinnersStore contains the methods used to store and retrieve notifications from the database.
 type WinnersStore interface {
-	Add(winners []Winner) error
+	Add(lotteryHeight uint32, winners []Winner) error
 	ClaimPrizes(publicKey string, amount uint64) error
-	ExpirePrizes() (uint64, error)
+	ExpirePrizes(lotteryHeight uint32) (uint64, error)
 	GetPrizes(publicKey string) (uint64, error)
-	List() ([]Winner, error)
-	ListHistory(from, to uint64) ([]Winner, error)
-	WriteHistory(winners []Winner) error
+	List(lotteryHeight uint32) ([]Winner, error)
 }
 
 // Winner represents a user that had a winning ticket.
@@ -31,7 +29,7 @@ type Winner struct {
 	PublicKey string `json:"public_key,omitempty" db:"public_key"`
 	Prizes    uint64 `json:"prizes,omitempty"`
 	Ticket    uint64 `json:"ticket,omitempty"`
-	CreatedAt int64  `json:"created_at,omitempty" db:"created_at"`
+	Expired   bool   `json:"expired,omitempty"`
 }
 
 type winners struct {
@@ -48,13 +46,10 @@ func newWinnersStore(db *sql.DB, logger *logger.Logger) WinnersStore {
 }
 
 // Add adds winners to the database.
-func (w *winners) Add(winners []Winner) error {
-	// TODO: if a user wins using the same public key on multiple days and does not withdraw the
-	// funds, then the latter prizes will expire earlier because created_at is not updated
-	query := "INSERT INTO winners (public_key, prizes, ticket) VALUES "
-	values := BulkInsertValues(len(winners), 3)
+func (w *winners) Add(lotteryHeight uint32, winners []Winner) error {
+	query := "INSERT INTO winners (public_key, prizes, ticket, lottery_height) VALUES "
+	values := BulkInsertValues(len(winners), 4)
 	query += values
-	query += " ON CONFLICT (public_key) DO UPDATE SET prizes=prizes+excluded.prizes"
 
 	stmt, err := w.db.Prepare(query)
 	if err != nil {
@@ -62,11 +57,12 @@ func (w *winners) Add(winners []Winner) error {
 	}
 	defer stmt.Close()
 
-	args := make([]any, 0, len(winners)*3)
+	args := make([]any, 0, len(winners)*4)
 	for _, winner := range winners {
 		args = append(args, winner.PublicKey)
 		args = append(args, winner.Prizes)
 		args = append(args, winner.Ticket)
+		args = append(args, lotteryHeight)
 	}
 
 	if _, err := stmt.Exec(args...); err != nil {
@@ -87,7 +83,7 @@ func (w *winners) ClaimPrizes(publicKey string, amount uint64) error {
 		return ErrInsufficientPrizes
 	}
 
-	stmt, err := w.db.Prepare("UPDATE winners SET prizes=prizes-? WHERE public_key=?")
+	stmt, err := w.db.Prepare("UPDATE winners SET prizes=prizes-? WHERE public_key=? AND expired=0")
 	if err != nil {
 		return errors.Wrap(err, "preparing statement")
 	}
@@ -100,21 +96,19 @@ func (w *winners) ClaimPrizes(publicKey string, amount uint64) error {
 	return nil
 }
 
-// ExpirePrizes looks for prizes that were given more than 3 days ago. It takes a moveFunds function
-// that should send the specified amount outside of the channel.
+// ExpirePrizes looks for prizes that were given more than 3 lotteries ago.
 //
 // It returns the amount of funds expired.
-func (w *winners) ExpirePrizes() (uint64, error) {
-	stmt, err := w.db.Prepare("DELETE FROM winners WHERE created_at < ? OR prizes=0 RETURNING prizes")
+func (w *winners) ExpirePrizes(lotteryHeight uint32) (uint64, error) {
+	stmt, err := w.db.Prepare("UPDATE winners SET expired=1 WHERE lottery_height < ? RETURNING prizes")
 	if err != nil {
 		return 0, errors.Wrap(err, "preparing statement")
 	}
 	defer stmt.Close()
 
-	t := time.Now().Add(-PrizesExpiry).Unix()
-	rows, err := stmt.Query(t)
+	rows, err := stmt.Query(lotteryHeight)
 	if err != nil {
-		return 0, errors.Wrap(err, "deleting expired prizes")
+		return 0, errors.Wrap(err, "expiring prizes")
 	}
 	defer rows.Close()
 
@@ -133,7 +127,7 @@ func (w *winners) ExpirePrizes() (uint64, error) {
 
 // GetPrizes returns the number of satoshis available for the public key to withdraw.
 func (w *winners) GetPrizes(publicKey string) (uint64, error) {
-	stmt, err := w.db.Prepare("SELECT prizes FROM winners WHERE public_key=?")
+	stmt, err := w.db.Prepare("SELECT prizes FROM winners WHERE public_key=? AND expired=0")
 	if err != nil {
 		return 0, errors.Wrap(err, "preparing statement")
 	}
@@ -150,15 +144,16 @@ func (w *winners) GetPrizes(publicKey string) (uint64, error) {
 	return prizes, nil
 }
 
-// List returns all the entries from the winners file.
-func (w *winners) List() ([]Winner, error) {
-	stmt, err := w.db.Prepare("SELECT public_key, prizes, ticket, created_at FROM winners")
+// List returns the winners from the lottery at the lottery height specified.
+func (w *winners) List(lotteryHeight uint32) ([]Winner, error) {
+	query := "SELECT public_key, prizes, ticket, expired FROM winners WHERE lottery_height=?"
+	stmt, err := w.db.Prepare(query)
 	if err != nil {
 		return nil, errors.Wrap(err, "preparing statement")
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.Query()
+	rows, err := stmt.Query(lotteryHeight)
 	if err != nil {
 		return nil, errors.Wrap(err, "selecting winners")
 	}
@@ -171,7 +166,7 @@ func (w *winners) List() ([]Winner, error) {
 	)
 	for rows.Next() {
 		if err := rows.Scan(
-			&winner.PublicKey, &winner.Prizes, &winner.Ticket, &winner.CreatedAt,
+			&winner.PublicKey, &winner.Prizes, &winner.Ticket, &winner.Expired,
 		); err != nil {
 			return nil, errors.Wrap(err, "scanning rows")
 		}
@@ -180,64 +175,4 @@ func (w *winners) List() ([]Winner, error) {
 	}
 
 	return winners, nil
-}
-
-// ListHistory returns the winners from the previous lottery.
-func (w *winners) ListHistory(from, to uint64) ([]Winner, error) {
-	query := "SELECT public_key, prizes, ticket, created_at FROM winners_history WHERE created_at >= ? AND created_at <= ?"
-	stmt, err := w.db.Prepare(query)
-	if err != nil {
-		return nil, errors.Wrap(err, "preparing statement")
-	}
-	defer stmt.Close()
-
-	rows, err := stmt.Query(from, to)
-	if err != nil {
-		return nil, errors.Wrap(err, "selecting winners")
-	}
-	defer rows.Close()
-
-	var (
-		winners []Winner
-		// Reuse object
-		winner Winner
-	)
-	for rows.Next() {
-		if err := rows.Scan(
-			&winner.PublicKey, &winner.Prizes, &winner.Ticket, &winner.CreatedAt,
-		); err != nil {
-			return nil, errors.Wrap(err, "scanning rows")
-		}
-
-		winners = append(winners, winner)
-	}
-
-	return winners, nil
-}
-
-// WriteHistory writes the winners list from the previous lottery to a different file that won't be
-// modified until the next lottery.
-func (w *winners) WriteHistory(winners []Winner) error {
-	query := "INSERT INTO winners_history (public_key, prizes, ticket) VALUES "
-	values := BulkInsertValues(len(winners), 3)
-	query += values
-
-	stmt, err := w.db.Prepare(query)
-	if err != nil {
-		return errors.Wrap(err, "preparing insert statement")
-	}
-	defer stmt.Close()
-
-	args := make([]any, 0, len(winners)*3)
-	for _, winner := range winners {
-		args = append(args, winner.PublicKey)
-		args = append(args, winner.Prizes)
-		args = append(args, winner.Ticket)
-	}
-
-	if _, err := stmt.Exec(args...); err != nil {
-		return errors.Wrap(err, "storing winners history")
-	}
-
-	return nil
 }

@@ -1,4 +1,5 @@
-import { Component, Show, createResource, createSignal, onCleanup, onMount } from "solid-js";
+import { Component, Show, createResource, createSignal, on, onCleanup, onMount } from "solid-js";
+import { createStore } from "solid-js/store";
 import { useI18n } from "@solid-primitives/i18n";
 import toast from 'solid-toast';
 
@@ -24,20 +25,29 @@ const Winners: Component<Props> = (props) => {
 	const api = useAPIContext()
 	const [t] = useI18n()
 
-	const oneDaySecs = 86400
-	const initialFrom = new Date().setUTCHours(0, 0, 0, 0) / 1000
+	const [index, setIndex] = createSignal(0)
 
-	const [from, setFrom] = createSignal(initialFrom)
+	const getHeights = async (): Promise<number[]> => {
+		const resp = await api.GetHeights()
+		setIndex(resp.heights.length - 2)
+		return resp.heights
+	}
+	const [heights, heightsOptions] = createResource<number[]>(getHeights)
 
+	// TODO: fix asynchronous issues
 	const getWinners = async (): Promise<Winner[]> => {
-		const resp = await api.GetWinnersHistory(from(), from() + oneDaySecs - 1)
+		const height = heights()?.at(index())
+		if (height === undefined) {
+			return []
+		}
+		const resp = await api.GetWinners(height)
 		return resp.winners
 	}
 	const [winners, winnersOptions] = createResource<Winner[]>(getWinners)
 
 	const onPaginationClick = async (next: boolean) => {
-		const n = next ? from() + oneDaySecs : from() - oneDaySecs
-		setFrom(n)
+		let i = next ? index() + 1 : index() - 1
+		setIndex(i)
 		const winners = await getWinners()
 		winnersOptions.mutate(winners)
 	}
@@ -50,12 +60,20 @@ const Winners: Component<Props> = (props) => {
 
 		api.Subscribe("info", (payload) => {
 			if (payload.winners !== undefined) {
-				winnersOptions.mutate(payload.winners)
-				for (let winner of payload.winners) {
-					if (winner.public_key === auth().publicKey) {
-						toast.success(t("congratulations", { prizes: BeautifyNumber(winner.prizes) }), { "duration": 3000 })
-					}
+				if (payload.next_height !== undefined) {
+					const next_height = payload.next_height
+					heightsOptions.mutate((heights) => heights && [next_height, ...heights])
 				}
+
+				winnersOptions.mutate(payload.winners)
+				payload.winners.forEach((winner) => {
+					if (winner.public_key === auth().publicKey) {
+						toast.success(
+							t("congratulations", { prizes: BeautifyNumber(winner.prizes) }),
+							{ "duration": 3000 }
+						)
+					}
+				})
 			}
 		})
 	})
@@ -77,12 +95,15 @@ const Winners: Component<Props> = (props) => {
 			>
 				<Show when={!winners.loading} fallback={<Loading />}>
 					<Show when={props.showPagination}>
-						<p class={styles.date}>
-							{(new Date(from() * 1000)).toLocaleDateString()}
+						<p class={styles.height}>
+							{heights()?.at(index())}
 						</p>
 					</Show>
-					<Show when={winners()} fallback={<NoItems text={t("no_winners")} />}>
-						<Table headers={[t("ticket"), t("nickname"), t("prize")]} rows={winners()} />
+					<Show when={winners()?.length} fallback={<NoItems text={t("no_winners")} />}>
+						<Table
+							headers={[t("ticket"), t("nickname"), t("prize")]}
+							rows={winners()}
+						/>
 					</Show>
 				</Show>
 			</Box>
@@ -90,7 +111,8 @@ const Winners: Component<Props> = (props) => {
 			<Show when={props.showPagination}>
 				<Pagination
 					onClickPrev={HandleError(() => onPaginationClick(false))}
-					showNext={from() < initialFrom}
+					showPrev={index() > 0}
+					showNext={index() < (heights()?.length || 0) - 1}
 					onClickNext={HandleError(() => onPaginationClick(true))}
 				/>
 			</Show>

@@ -36,6 +36,7 @@ func (h *Handler) GetBets(w http.ResponseWriter, r *http.Request) {
 		v, err := strconv.ParseBool(reverseStr)
 		if err != nil {
 			sendLNURLError(w, http.StatusBadRequest, errors.Wrap(err, "invalid reverse parameter"))
+			return
 		}
 		reverse = v
 	}

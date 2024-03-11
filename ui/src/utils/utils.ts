@@ -21,28 +21,6 @@ export const BeautifyNumber = (n?: number, sep?: string): string => {
 }
 
 /**
- * FormatTime converts HH:MM:SS into the desired format.
- * 
- * @param t time value
- * @returns formatted time
- */
-export const FormatTime = (t: string): string => {
-	// Already matches the format
-	if (t.length === 8) {
-		return t
-	}
-
-	const parts = t.split(":")
-	parts.forEach((part, index, self) => {
-		if (part.length === 1) {
-			self[index] = "0" + part
-		}
-	})
-	return parts.join(":")
-}
-
-
-/**
  * Hash takes any string and returns its SHA-256 hash.
  * 
  * @param key string to hash

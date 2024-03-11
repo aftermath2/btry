@@ -6,42 +6,47 @@ import (
 	"github.com/aftermath2/BTRY/db"
 )
 
-// WinnersResponse is the response schema of the /winners and /winners/history endpoints.
+// PrizesResponse contains a number representing a user's total prizes.
+type PrizesResponse struct {
+	Prizes uint64 `json:"prizes"`
+}
+
+// WinnersResponse is the response schema of the /winners endpoint.
 type WinnersResponse struct {
 	Winners []db.Winner `json:"winners,omitempty"`
 }
 
-// GetWinners responds with the list of winners.
-func (h *Handler) GetWinners(w http.ResponseWriter, _ *http.Request) {
-	winners, err := h.db.Winners.List()
+// GetPrizes returns a public key's prizes.
+func (h *Handler) GetPrizes(w http.ResponseWriter, r *http.Request) {
+	publicKey, err := getAuthPublicKey(r)
+	if err != nil {
+		sendError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	prizes, err := h.db.Winners.GetPrizes(publicKey)
 	if err != nil {
 		sendError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	resp := WinnersResponse{
-		Winners: winners,
+	resp := PrizesResponse{
+		Prizes: prizes,
 	}
 	sendResponse(w, http.StatusOK, resp)
 }
 
-// GetWinnersHistory responds with the list of winners from the previous lottery.
-func (h *Handler) GetWinnersHistory(w http.ResponseWriter, r *http.Request) {
+// GetWinners responds with the list of winners.
+func (h *Handler) GetWinners(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
-	from, err := parseIntParam(query, "from")
+	height, err := parseIntParam(query, "height")
 	if err != nil {
 		sendError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	to, err := parseIntParam(query, "to")
-	if err != nil {
-		sendError(w, http.StatusBadRequest, err)
-		return
-	}
-
-	winners, err := h.db.Winners.ListHistory(from, to)
+	winners, err := h.db.Winners.List(uint32(height))
 	if err != nil {
 		sendError(w, http.StatusInternalServerError, err)
 		return

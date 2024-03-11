@@ -55,7 +55,7 @@ func (b *BetsSuite) TestAdd() {
 	bets, err := b.db.List(0, 0, false)
 	b.NoError(err)
 
-	b.Equal(3, len(bets))
+	b.Len(bets, 3)
 	b.Equal(bet.PublicKey, bets[2].PublicKey)
 	expectedIndex := firstBet.Tickets + secondBet.Tickets + bet.Tickets
 	b.Equal(expectedIndex, bets[2].Index)

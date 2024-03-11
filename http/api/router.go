@@ -3,6 +3,7 @@ package api
 import (
 	"io"
 	"net/http"
+	_ "net/http/pprof"
 
 	"github.com/aftermath2/BTRY/config"
 	"github.com/aftermath2/BTRY/db"
@@ -11,6 +12,7 @@ import (
 	"github.com/aftermath2/BTRY/http/api/sse"
 	"github.com/aftermath2/BTRY/lightning"
 	"github.com/aftermath2/BTRY/ui"
+	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -31,7 +33,8 @@ func NewRouter(
 	config config.API,
 	db *db.DB,
 	lnd lightning.Client,
-	winnersChannel chan []db.Winner,
+	winnersCh <-chan []db.Winner,
+	blocksCh chan<- *chainrpc.BlockEpoch,
 ) (Router, error) {
 	rateLimiter, err := middleware.NewRateLimiter(config.RateLimiter)
 	if err != nil {
@@ -43,7 +46,7 @@ func NewRouter(
 		return nil, err
 	}
 
-	eventStreamer, err := sse.NewStreamer(config.SSE, db, lnd, winnersChannel)
+	eventStreamer, err := sse.NewStreamer(config.SSE, db, lnd, winnersCh, blocksCh)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +58,7 @@ func NewRouter(
 	if err != nil {
 		return nil, err
 	}
-	fs := http.FileServer(http.FS(uiFs))
+	fs := http.FileServerFS(uiFs)
 	mux.Mount("/", fs)
 	// Temporary workaround to handle refreshes
 	mux.Get("/bet", redirectRoot)
@@ -69,13 +72,13 @@ func NewRouter(
 		r.Use(rateLimiter.Handle, middleware.Cors, loggerMw.Log)
 
 		r.Get("/bets", handler.GetBets)
+		r.Get("/heights", handler.GetHeights)
 		r.Handle("/events", eventStreamer)
 		r.Get("/lottery", handler.GetLottery)
 		r.Get("/invoice", handler.GetInvoice)
 		r.Get("/lnurl/withdraw", handler.LNURLWithdraw)
 		r.Get("/prizes", handler.GetPrizes)
 		r.Get("/winners", handler.GetWinners)
-		r.Get("/winners/history", handler.GetWinnersHistory)
 		r.Post("/withdraw", handler.Withdraw)
 	})
 

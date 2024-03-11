@@ -15,10 +15,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const (
-	lotteryTimeFormat = "15:04"
-)
-
 // Config represents the configuration for the BTRY application.
 type Config struct {
 	Notifier  Notifier  `yaml:"notifier"`
@@ -62,12 +58,13 @@ type Logger struct {
 
 // Lottery configuration.
 type Lottery struct {
-	Time   string `yaml:"time"`
-	Logger Logger `yaml:"logger"`
+	Logger   Logger `yaml:"logger"`
+	Duration uint32 `yaml:"duration"`
 }
 
 // Notifier configuration.
 type Notifier struct {
+	Disable  bool     `yaml:"disable"`
 	Telegram Telegram `yaml:"telegram"`
 	Logger   Logger   `yaml:"logger"`
 }
@@ -165,8 +162,8 @@ func (c Config) Validate() error {
 		return errors.Wrap(err, "invalid macaroon encoding")
 	}
 
-	if _, err := time.Parse(lotteryTimeFormat, c.Lottery.Time); err != nil {
-		return errors.Wrap(err, "invalid lottery time, must have the format 'HH:MM'")
+	if c.Lottery.Duration == 0 {
+		return errors.New("invalid lottery duration, must be higher than zero")
 	}
 
 	return validateAddresses(c.Lightning.RPCAddress, c.Server.Address, c.Tor.Address)

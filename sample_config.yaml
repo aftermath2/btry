@@ -35,13 +35,14 @@ lightning:
   macaroon_path: path/to/macaroon_path
 
 lottery:
-  time: 00:00
+  duration: 144
   logger:
     label: Lottery
     out_file: logs/lottery.log
     level: 2
 
 notifier:
+  disable: false
   logger:
     label: Notifier
     out_file: logs/notifier.log

@@ -12,9 +12,10 @@ import (
 
 // Notification message formats
 const (
-	Congratulations     = "Congratulations! You have won %d sats, your prizes expire in 5 days."
-	welcome             = "Hello @%s! I will send you a notification if you win."
-	errInvalidMessage   = "Message not recognized. Enable notifications using `/start <public_key>` or scanning the QR code on BTRY's web client."
+	Congratulations   = "Congratulations! You have won %d sats, your prizes expire in 5 days."
+	welcome           = "Hello @%s! I will send you a notification if you win."
+	errInvalidMessage = "Message not recognized. Enable notifications using `/start <public_key>`" +
+		" or scanning the QR code on BTRY's web client."
 	errInvalidPublicKey = "The public key %q is invalid."
 	errInternalError    = "Something went wrong. Please try again later or contact an admin."
 	errAlreadyEnabled   = "The public key already has notifications enabled"
@@ -28,6 +29,7 @@ type Notifier interface {
 
 type notifier struct {
 	telegram Notifier
+	disabled bool
 }
 
 // NewNotifier returns a new notification sender.
@@ -37,20 +39,32 @@ func NewNotifier(config config.Notifier, db *db.DB, torClient *http.Client) (Not
 		return nil, err
 	}
 
+	if config.Disable {
+		logger.Info("Notifier disabled")
+		return &notifier{disabled: config.Disable}, nil
+	}
+
 	telegram, err := NewTelegramNotifier(config, db, logger, torClient)
 	if err != nil {
 		return nil, err
 	}
 
 	return &notifier{
+		disabled: config.Disable,
 		telegram: telegram,
 	}, nil
 }
 
 func (n *notifier) GetUpdates() {
+	if n.disabled {
+		return
+	}
 	n.telegram.GetUpdates()
 }
 
 func (n *notifier) Notify(chatID int64, message string) {
+	if n.disabled {
+		return
+	}
 	n.telegram.Notify(chatID, message)
 }

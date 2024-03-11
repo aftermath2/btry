@@ -14,8 +14,6 @@ api:
 
 db:
   path: bdb
-  winners_path: winners.db
-  winners_history_path: winners_history.db
   logger:
     label: DB
     out_file: db.log
@@ -35,13 +33,14 @@ lightning:
   max_fee_ppm: 500
 
 lottery:
-  time: 00:00
+  duration: 100
   logger:
     label: Lottery
     out_file: lottery.log
     level: 1
 
 notifier:
+  disabled: false
   logger:
     label: Notifier
     out_file: notifier.log

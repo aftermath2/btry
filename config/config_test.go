@@ -32,7 +32,8 @@ func TestValidate(t *testing.T) {
 			MacaroonPath: "./testdata/readonly.macaroon",
 		},
 		Lottery: config.Lottery{
-			Time: "00:00",
+			Duration: 144,
+			Logger:   config.Logger{},
 		},
 		Server: config.Server{
 			Address: "127.0.0.1:4000",
@@ -74,14 +75,6 @@ func TestValidate(t *testing.T) {
 			desc: "Invalid macaroon path",
 			getConfig: func(c config.Config) config.Config {
 				c.Lightning.MacaroonPath = "macaroon"
-				return c
-			},
-			fail: true,
-		},
-		{
-			desc: "Invalid time",
-			getConfig: func(c config.Config) config.Config {
-				c.Lottery.Time = "03/01/2009"
 				return c
 			},
 			fail: true,

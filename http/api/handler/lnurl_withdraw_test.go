@@ -20,7 +20,7 @@ func (h *HandlerSuite) TestLNURLWithdraw() {
 	h.req = httptest.NewRequest(http.MethodPost, "/lnurl/withdraw?"+url.Encode(), nil)
 
 	prizes := uint64(2_000_000)
-	h.winnersMock.On("GetPrizes", validPublicKey).Return(prizes, nil)
+	h.prizesMock.On("Get", validPublicKey).Return(prizes, nil)
 
 	h.handler.LNURLWithdraw(h.rec, h.req)
 
@@ -53,7 +53,7 @@ func (h *HandlerSuite) TestLNURLWithdrawNoPrizes() {
 	h.req = httptest.NewRequest(http.MethodPost, "/lnurl/withdraw?"+url.Encode(), nil)
 
 	prizes := uint64(0)
-	h.winnersMock.On("GetPrizes", validPublicKey).Return(prizes, nil)
+	h.prizesMock.On("Get", validPublicKey).Return(prizes, nil)
 
 	h.handler.LNURLWithdraw(h.rec, h.req)
 
@@ -124,7 +124,7 @@ func (h *HandlerSuite) TestLNURLWithdrawInternalError() {
 	h.SetAuthorizationKey(validPublicKey)
 
 	expectedErr := errors.New("test err")
-	h.winnersMock.On("GetPrizes", validPublicKey).Return(uint64(0), expectedErr)
+	h.prizesMock.On("Get", validPublicKey).Return(uint64(0), expectedErr)
 
 	h.handler.LNURLWithdraw(h.rec, h.req)
 

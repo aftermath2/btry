@@ -165,12 +165,16 @@ func (l *Lottery) raffle(block *chainrpc.BlockEpoch) error {
 	if err := l.db.Winners.Add(block.Height, winners); err != nil {
 		return errors.Wrap(err, "saving winners")
 	}
-	l.winnersCh <- winners
 
+	if err := l.db.Prizes.Set(block.Height, winners); err != nil {
+		return errors.Wrap(err, "saving prizes")
+	}
+
+	l.winnersCh <- winners
 	l.notifyWinners(winners)
 
-	// Expire prizes assigned more than 3 days ago
-	expiredPrizes, err := l.db.Winners.ExpirePrizes(block.Height - (l.blocksDuration * 3))
+	// Expire prizes assigned 720 or more blocks ago
+	expiredPrizes, err := l.db.Prizes.Expire(block.Height - (l.blocksDuration * 5))
 	if err != nil {
 		return err
 	}
@@ -201,8 +205,7 @@ func (l *Lottery) getWinners(blockHash []byte, prizePool uint64, bets []db.Bet) 
 		winner := db.Winner{
 			PublicKey: getPublicKey(bets, winningTicket),
 			Ticket:    winningTicket,
-			Prizes:    uint64(math.Round(p)),
-			Expired:   false,
+			Prize:     uint64(math.Round(p)),
 		}
 
 		winners = append(winners, winner)
@@ -258,9 +261,9 @@ func (l *Lottery) notifyWinners(winners []db.Winner) {
 	for _, winner := range winners {
 		prizes, ok := winnersMap[winner.PublicKey]
 		if ok {
-			winnersMap[winner.PublicKey] = prizes + winner.Prizes
+			winnersMap[winner.PublicKey] = prizes + winner.Prize
 		} else {
-			winnersMap[winner.PublicKey] = winner.Prizes
+			winnersMap[winner.PublicKey] = winner.Prize
 		}
 	}
 

@@ -55,8 +55,9 @@ type SSESuite struct {
 	suite.Suite
 
 	betsMock      *db.BetsStoreMock
-	winnersMock   *db.WinnersStoreMock
 	lotteriesMock *db.LotteriesStoreMock
+	prizesMock    *db.PrizesStoreMock
+	winnersMock   *db.WinnersStoreMock
 	lndMock       *lightning.ClientMock
 	server        *ServerMock
 	winnersCh     chan []db.Winner
@@ -72,8 +73,9 @@ func (s *SSESuite) SetupTest() {
 	s.NoError(err)
 
 	s.betsMock = db.NewBetsStoreMock()
-	s.winnersMock = db.NewWinnersStoreMock()
 	s.lotteriesMock = db.NewLotteriesStoreMock()
+	s.prizesMock = db.NewPrizesStoreMock()
+	s.winnersMock = db.NewWinnersStoreMock()
 	s.lndMock = lightning.NewClientMock()
 	s.server = NewServerMock()
 	s.winnersCh = make(chan []db.Winner)
@@ -85,8 +87,9 @@ func (s *SSESuite) SetupTest() {
 		trackedPayments: cmap.New[entry](),
 		db: &db.DB{
 			Bets:      s.betsMock,
-			Winners:   s.winnersMock,
 			Lotteries: s.lotteriesMock,
+			Prizes:    s.prizesMock,
+			Winners:   s.winnersMock,
 		},
 	}
 }
@@ -335,8 +338,8 @@ func (s *SSESuite) TestSubscribePaymentsFailed() {
 	}
 	id := s.sse.TrackPayment(rHash, publicKey, amount)
 
-	winners := []db.Winner{{PublicKey: publicKey, Prizes: amount}}
-	s.winnersMock.On("GetPrizes", publicKey).Return(uint64(0), nil)
+	s.prizesMock.On("Get", publicKey).Return(uint64(0), nil)
+	winners := []db.Winner{{PublicKey: publicKey, Prize: amount}}
 	s.winnersMock.On("Add", winners).Return(nil)
 
 	payload := &paymentsPayload{
@@ -373,7 +376,7 @@ func (s *SSESuite) TestSubscribeWinners() {
 	remoteBalance := int64(10)
 	prizePool := uint64(25000)
 	nextHeight := uint32(1)
-	winners := []db.Winner{{PublicKey: "winner", Prizes: 10, Ticket: 1}}
+	winners := []db.Winner{{PublicKey: "winner", Prize: 10, Ticket: 1}}
 
 	s.lndMock.On("RemoteBalance", ctx).Return(remoteBalance, nil)
 	s.betsMock.On("GetPrizePool").Return(prizePool, nil)
@@ -446,11 +449,11 @@ func (s *SSESuite) TestRestoreFunds() {
 	}
 	s.sse.trackedPayments.Set(rHash, entry)
 
-	s.winnersMock.On("GetPrizes", entry.publicKey).Return(uint64(0), nil)
+	s.prizesMock.On("Get", entry.publicKey).Return(uint64(0), nil)
 	nextHeight := uint32(1)
 	s.lotteriesMock.On("GetNextHeight").Return(nextHeight, nil)
 
-	winner := db.Winner{PublicKey: entry.publicKey, Prizes: entry.amount}
+	winner := db.Winner{PublicKey: entry.publicKey, Prize: entry.amount}
 	s.winnersMock.On("Add", nextHeight, []db.Winner{winner}).Return(nil)
 
 	s.sse.restoreFunds(rHash, entry)

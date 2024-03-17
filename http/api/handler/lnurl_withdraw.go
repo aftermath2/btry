@@ -35,7 +35,7 @@ func (h *Handler) LNURLWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	totalPrizes, err := h.db.Winners.GetPrizes(publicKey)
+	totalPrizes, err := h.db.Prizes.Get(publicKey)
 	if err != nil {
 		sendLNURLError(w, http.StatusInternalServerError, err)
 		return

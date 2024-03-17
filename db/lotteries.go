@@ -69,9 +69,6 @@ func (l *lotteries) GetNextHeight() (uint32, error) {
 
 	var height uint32
 	if err := stmt.QueryRow(query).Scan(&height); err != nil {
-		if err == sql.ErrNoRows {
-			return 0, nil
-		}
 		return 0, errors.Wrap(err, "scanning height")
 	}
 

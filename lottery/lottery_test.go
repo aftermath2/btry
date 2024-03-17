@@ -176,11 +176,11 @@ func TestRaffle(t *testing.T) {
 		winners, err := db.Winners.List(block.Height)
 		assert.NoError(t, err)
 
-		assert.LessOrEqual(t, len(winners), 2)
+		assert.Equal(t, len(winners), len(prizes))
 
 		givenPrizes := uint64(0)
 		for _, winner := range winners {
-			givenPrizes += winner.Prizes
+			givenPrizes += winner.Prize
 			if winner.PublicKey != bets[0].PublicKey && winner.PublicKey != bets[1].PublicKey {
 				assert.Failf(t, "A winner that did not have bets was assigned: %s", winner.PublicKey)
 			}
@@ -226,8 +226,7 @@ func TestGetWinners(t *testing.T) {
 		validateGetWinner(t, winner.Ticket, winner.PublicKey)
 
 		prize := (prizes[i] / 100) * float64(prizePool)
-		assert.Equal(t, uint64(math.Round(prize)), winner.Prizes)
-		assert.False(t, winner.Expired)
+		assert.Equal(t, uint64(math.Round(prize)), winner.Prize)
 	}
 }
 

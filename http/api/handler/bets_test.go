@@ -24,6 +24,7 @@ type HandlerSuite struct {
 	req               *http.Request
 	betsMock          *db.BetsStoreMock
 	lotteriesMock     *db.LotteriesStoreMock
+	prizesMock        *db.PrizesStoreMock
 	winnersMock       *db.WinnersStoreMock
 	lndMock           *lightning.ClientMock
 	handler           *handler.Handler
@@ -39,12 +40,14 @@ func (h *HandlerSuite) SetupTest() {
 	h.req = httptest.NewRequest(http.MethodGet, "/", nil)
 	h.betsMock = db.NewBetsStoreMock()
 	h.lotteriesMock = db.NewLotteriesStoreMock()
+	h.prizesMock = db.NewPrizesStoreMock()
 	h.winnersMock = db.NewWinnersStoreMock()
 	h.lndMock = lightning.NewClientMock()
 	h.eventStreamerMock = sse.NewStreamerMock()
 	db := &db.DB{
 		Bets:      h.betsMock,
 		Lotteries: h.lotteriesMock,
+		Prizes:    h.prizesMock,
 		Winners:   h.winnersMock,
 	}
 	h.handler = handler.New(h.lndMock, db, h.eventStreamerMock)

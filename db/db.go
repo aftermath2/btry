@@ -17,6 +17,7 @@ type DB struct {
 	db            *sql.DB
 	Notifications NotificationsStore
 	Bets          BetsStore
+	Prizes        PrizesStore
 	Winners       WinnersStore
 	Lotteries     LotteriesStore
 }
@@ -46,6 +47,7 @@ func Open(config config.DB) (*DB, error) {
 	return &DB{
 		db:            db,
 		Bets:          newBetsStore(db, logger),
+		Prizes:        newPrizesStore(db, logger),
 		Notifications: newNotificationsStore(db, logger),
 		Winners:       newWinnersStore(db, logger),
 		Lotteries:     newLotteriesStore(db, logger),
@@ -118,12 +120,21 @@ CREATE TABLE IF NOT EXISTS bets (
 
 CREATE TABLE IF NOT EXISTS winners (
 	public_key VARCHAR(64) NOT NULL,
-	prizes INTEGER NOT NULL CHECK (prizes >= 0),
+	prize INTEGER NOT NULL,
 	ticket INTEGER NOT NULL,
-	expired BOOLEAN DEFAULT 0 CHECK (expired IN (0, 1)),
 	lottery_height INTEGER NOT NULL,
-	FOREIGN KEY (lottery_height) REFERENCES lotteries(height),
-	PRIMARY KEY (lottery_height)
+	FOREIGN KEY (lottery_height) REFERENCES lotteries(height)
+);
+
+CREATE INDEX IF NOT EXISTS lottery_heights ON winners(lottery_height);
+
+CREATE TABLE IF NOT EXISTS prizes (
+	amount INTEGER NOT NULL CHECK (amount >= 0),
+	public_key VARCHAR(64) NOT NULL,
+	lottery_height INTEGER NOT NULL,
+	expired BOOLEAN DEFAULT 0 CHECK (expired IN (0, 1)),
+	FOREIGN KEY (public_key) REFERENCES winners(public_key),
+	FOREIGN KEY (lottery_height) REFERENCES lotteries(height)
 );
 
 CREATE TABLE IF NOT EXISTS notifications (

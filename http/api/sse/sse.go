@@ -384,7 +384,7 @@ func (s *streamer) restoreFunds(rHash string, e entry) {
 	s.trackedPayments.Remove(rHash)
 
 	// We should restore the prizes only if the public key is stored as a winner
-	if prizes, err := s.db.Winners.GetPrizes(e.publicKey); err != nil || prizes == 0 {
+	if prizes, err := s.db.Prizes.Get(e.publicKey); err != nil || prizes == 0 {
 		s.logger.Error("tried restoring prizes to a user that is not a winner")
 		return
 	}
@@ -397,7 +397,7 @@ func (s *streamer) restoreFunds(rHash string, e entry) {
 
 	winner := db.Winner{
 		PublicKey: e.publicKey,
-		Prizes:    e.amount,
+		Prize:     e.amount,
 	}
 	if err := s.db.Winners.Add(height, []db.Winner{winner}); err != nil {
 		s.logger.Error(

@@ -16,7 +16,8 @@ const Pagination: Component<Props> = (props) => {
 
 	return (
 		<div class={styles.container}>
-			<Show when={props.showPrev}>
+			{/* Add empty fallback so the next button stays in place */}
+			<Show when={props.showPrev} fallback={<div></div>}>
 				<div>
 					<Button text={t("previous")} onClick={props.onClickPrev} />
 				</div>

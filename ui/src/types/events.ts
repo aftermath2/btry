@@ -10,7 +10,6 @@ export type InfoPayload = {
 	readonly capacity?: number
 	readonly prize_pool?: number
 	readonly next_height?: number
-	readonly block_height?: number
 }
 
 export type InvoicesPayload = {

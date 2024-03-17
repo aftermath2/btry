@@ -1,4 +1,4 @@
-import { BeautifyNumber, FormatTime, Hash, HexEncode, HexRegex } from "../../utils/utils";
+import { BeautifyNumber, Hash, HexEncode, HexRegex } from "../../utils/utils";
 
 describe("BeautifyNumber", () => {
 	test("Zero", () => {
@@ -13,19 +13,6 @@ describe("BeautifyNumber", () => {
 		expect(BeautifyNumber(5_000_000, "_")).toBe("5_000_000")
 	})
 })
-
-describe("FormatTime", () => {
-	test("Already formatted", () => {
-		const time = "00:00:00"
-		expect(FormatTime(time)).toBe(time)
-	})
-
-	test("Format", () => {
-		const expected = "05:59:01"
-		expect(FormatTime("5:59:1")).toBe(expected)
-	})
-})
-
 
 describe("Hash", () => {
 	test("Verify that some text is hashed with SHA-256 as expected", async () => {

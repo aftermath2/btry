@@ -75,12 +75,16 @@ const Home: Component = () => {
 				</div>
 				<div class={styles.secondary}>
 					<div class={styles.info}>
-						<p class={`${styles.text} ${styles.capacity}`}>{t("total_capacity")}</p>
+						<p class={`${styles.text} ${styles.capacity}`}>{t("maximum_capacity")}</p>
 						<Sats num={info()?.capacity} fontSize="1.875rem" fontWeight="600" />
 					</div>
 					<div class={styles.info}>
-						<p class={`${styles.text} ${styles.block_height}`}>{t("block_height")}</p>
-						<h3 class={styles.block_height_num}>{BeautifyNumber(info()?.next_height)}</h3>
+						<p class={`${styles.text} ${styles.block_height}`}>
+							{t("target_block_height")}
+						</p>
+						<h3 class={styles.block_height_num}>
+							{BeautifyNumber(info()?.next_height)}
+						</h3>
 					</div>
 				</div>
 			</Show>

@@ -15,7 +15,25 @@ Onion site: http://22id55jzspf3mo5duk5z4honwhqdl7ebtmkemccknmpkniytxwqzzzyd.onio
 
 ## Lottery
 
-Users participate for the opportunity of winning the funds that were bet in the same UTC day. Winning tickets are generated using cryptographically secure random numbers and announced at 00:00:00 UTC.
+Users participate for the opportunity of winning the funds that were bet in the same lottery. Each one lasts 144 Bitcoin blocks (~24 hours).
+
+Winning tickets are generated using the bytes of the Bitcoin block hash that was mined at the lottery height target. Any user can generate the winning tickets themselves and verify that the prizes were correctly assigned.
+
+BTRY decodes the hash and iterates the bytes in reverse, it uses two numbers to calculate each winning ticket. The formula used is $(a ^ b)\mod prizePool$.
+
+For example:
+
+```go
+blockHash = "000000000000000000003bc0544004a6e74beb66b21b1e564eb81dbd478d67c6"
+decodedBlockHashBytes = [0 0 0 0 0 0 0 0 0 0 59 192 84 64 4 166 231 75 235 102 178 27 30 86 78 184 29 189 71 141 103 198]
+prizePool = 10,000
+
+firstWinner = (198 ^ 103) % prizePool = 9,392
+secondWinner = (141 ^ 71) % prizePool = 5,941
+thirdWinner = (189 ^ 29) % prizePool = 4,909
+...
+eighthWinner = (75 ^ 231) % prizePool = 1,875
+```
 
 ### Bets
 
@@ -63,16 +81,6 @@ openssl asn1parse -in private_key.pem -offset 14 | tail -c 65
 
 > [!Warning]
 > Do not share your private key. It is never sent to the server, only its derived public key and signature are used to store your bets and claim the prizes in case you win.
-
-## Battles (coming soon)
-
-Battles are a **non-custodial** PvP game based on HODL contracts where two players compete for a fixed amount of money.
-
-The funds are never in the hands of BTRY, it merely acts as a coordinator and decides which payment to settle (loser -> winner) and which one to cancel (winner -> loser).
-
-Initially, the idea is simple, both users choose one number between 0 and 1000, BTRY generates one randomly and the one that got it closer wins. However, we may move towards other forms of deciding a winner, like real events outcomes. There has been demand for a sports betting platform based on Lightning on some forums and these technologies may be a great fit for that. 
-
-The random number generation is based on provably fair random numbers, so both parties can validate that the results are fair and not manipulated.
 
 ## Building BTRY
 

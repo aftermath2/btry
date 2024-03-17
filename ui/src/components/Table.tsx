@@ -44,7 +44,7 @@ const Table: Component<Props> = (props) => {
 			array.push({
 				num: row.ticket,
 				nickname: nickname,
-				sats: row.prizes
+				sats: row.prize
 			})
 		}
 

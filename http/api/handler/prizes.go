@@ -2,8 +2,8 @@ package handler
 
 import "net/http"
 
-// PrizesResponse contains a number representing a user's total prizes.
-type PrizesResponse struct {
+// GetPrizesResponse contains a number representing a user's total prizes.
+type GetPrizesResponse struct {
 	Prizes uint64 `json:"prizes"`
 }
 
@@ -15,13 +15,13 @@ func (h *Handler) GetPrizes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	prizes, err := h.db.Winners.GetPrizes(publicKey)
+	prizes, err := h.db.Prizes.Get(publicKey)
 	if err != nil {
 		sendError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	resp := PrizesResponse{
+	resp := GetPrizesResponse{
 		Prizes: prizes,
 	}
 	sendResponse(w, http.StatusOK, resp)

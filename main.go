@@ -14,6 +14,7 @@ import (
 	"github.com/aftermath2/BTRY/notification"
 	"github.com/aftermath2/BTRY/tor"
 
+	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	_ "modernc.org/sqlite"
 )
 
@@ -30,7 +31,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	winnersChannel := make(chan []db.Winner)
+	winnersCh := make(chan []db.Winner)
+	blocksCh := make(chan *chainrpc.BlockEpoch)
 
 	db, err := db.Open(config.DB)
 	if err != nil {
@@ -49,13 +51,16 @@ func main() {
 	}
 	go notifier.GetUpdates()
 
-	lottery, err := lottery.New(config.Lottery, db, lnd, notifier, winnersChannel)
+	lottery, err := lottery.New(config.Lottery, db, lnd, notifier, winnersCh, blocksCh)
 	if err != nil {
 		log.Fatal(err)
 	}
-	lottery.Start()
 
-	router, err := api.NewRouter(config.API, db, lnd, winnersChannel)
+	if err := lottery.Start(); err != nil {
+		log.Fatal(err)
+	}
+
+	router, err := api.NewRouter(config.API, db, lnd, winnersCh, blocksCh)
 	if err != nil {
 		log.Fatal(err)
 	}

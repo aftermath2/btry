@@ -13,6 +13,7 @@ import (
 	"github.com/aftermath2/BTRY/logger"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,8 +34,11 @@ func TestRouter(t *testing.T) {
 		},
 	}
 	winnersCh := make(chan []db.Winner)
+	blocksCh := make(chan *chainrpc.BlockEpoch)
 	lndMock := lightning.NewClientMock()
 
+	lndMock.On("SubscribeBlocks", context.Background()).
+		Return(lightning.BlockedStreamMock[*chainrpc.BlockEpoch]{}, nil)
 	lndMock.On("SubscribeChannelEvents", context.Background()).
 		Return(lightning.BlockedStreamMock[*lnrpc.ChannelEventUpdate]{}, nil)
 	lndMock.On("SubscribeInvoices", context.Background()).
@@ -42,7 +46,7 @@ func TestRouter(t *testing.T) {
 	lndMock.On("SubscribePayments", context.Background()).
 		Return(lightning.BlockedStreamMock[*lnrpc.Payment]{}, nil)
 
-	handler, err := api.NewRouter(apiConfig, &db.DB{}, lndMock, winnersCh)
+	handler, err := api.NewRouter(apiConfig, &db.DB{}, lndMock, winnersCh, blocksCh)
 	assert.NoError(t, err)
 
 	srv := httptest.NewServer(handler)

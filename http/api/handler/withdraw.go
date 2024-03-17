@@ -71,7 +71,7 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 	// Here the invoice amount is deducted from the public key prize and persisted, if the payment
 	// fails, the user will get its funds restored.
 	// It's done this way to not let users request more funds than they have.
-	if err := h.db.Winners.ClaimPrizes(publicKey, withdrawAmount); err != nil {
+	if err := h.db.Prizes.Withdraw(publicKey, withdrawAmount); err != nil {
 		sendLNURLError(w, http.StatusBadRequest, err)
 		return
 	}

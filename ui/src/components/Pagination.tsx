@@ -8,6 +8,7 @@ interface Props {
 	onClickPrev: () => void
 	onClickNext: () => void
 	showNext?: boolean
+	showPrev?: boolean
 }
 
 const Pagination: Component<Props> = (props) => {
@@ -15,9 +16,12 @@ const Pagination: Component<Props> = (props) => {
 
 	return (
 		<div class={styles.container}>
-			<div>
-				<Button text={t("previous")} onClick={props.onClickPrev} />
-			</div>
+			{/* Add empty fallback so the next button stays in place */}
+			<Show when={props.showPrev} fallback={<div></div>}>
+				<div>
+					<Button text={t("previous")} onClick={props.onClickPrev} />
+				</div>
+			</Show>
 
 			<Show when={props.showNext}>
 				<div>

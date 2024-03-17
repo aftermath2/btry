@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math/rand"
+	"math/rand/v2"
 	"net/http"
 	"time"
 
@@ -18,6 +18,7 @@ import (
 	"github.com/aftermath2/BTRY/lottery"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/pkg/errors"
 	"github.com/r3labs/sse"
@@ -40,9 +41,10 @@ var (
 type status uint8
 
 type infoPayload struct {
-	Winners   *[]db.Winner `json:"winners,omitempty"`
-	Capacity  int64        `json:"capacity,omitempty"`
-	PrizePool int64        `json:"prize_pool,omitempty"`
+	Winners    *[]db.Winner `json:"winners,omitempty"`
+	Capacity   *int64       `json:"capacity,omitempty"`
+	PrizePool  *int64       `json:"prize_pool,omitempty"`
+	NextHeight *uint32      `json:"next_height,omitempty"`
 }
 
 type invoicesPayload struct {
@@ -94,6 +96,7 @@ type streamer struct {
 	server          Server
 	logger          *logger.Logger
 	winnersCh       <-chan []db.Winner
+	blocksCh        chan<- *chainrpc.BlockEpoch
 	config          config.SSE
 }
 
@@ -103,6 +106,7 @@ func NewStreamer(
 	db *db.DB,
 	lnd lightning.Client,
 	winnersCh <-chan []db.Winner,
+	blocksCh chan<- *chainrpc.BlockEpoch,
 ) (Streamer, error) {
 	logger, err := logger.New(config.Logger)
 	if err != nil {
@@ -121,10 +125,12 @@ func NewStreamer(
 		trackedPayments: cmap.New[entry](),
 		logger:          logger,
 		winnersCh:       winnersCh,
+		blocksCh:        blocksCh,
 	}
 
 	// Start listening for events to stream
 	ctx := context.Background()
+	go streamer.subscribeBlocks(ctx)
 	go streamer.subscribeChannelEvents(ctx)
 	go streamer.subscribeInvoices(ctx)
 	go streamer.subscribePayments(ctx)
@@ -174,6 +180,26 @@ func (s *streamer) removeExpiredPayments() {
 	}
 }
 
+// subscribeBlocks listens to a stream of blocks and sends an event to all subscribers when a new
+// block is found.
+func (s *streamer) subscribeBlocks(ctx context.Context) {
+	stream, err := s.lnd.SubscribeBlocks(ctx)
+	if err != nil {
+		s.logger.Error(errors.Wrap(err, "subscribing to blocks stream"))
+		return
+	}
+
+	for {
+		block, err := stream.Recv()
+		if err != nil {
+			s.logger.Error(errors.Wrap(err, "receiving events from blocks stream"))
+			return
+		}
+
+		s.blocksCh <- block
+	}
+}
+
 func (s *streamer) subscribeChannelEvents(ctx context.Context) {
 	stream, err := s.lnd.SubscribeChannelEvents(ctx)
 	if err != nil {
@@ -209,8 +235,8 @@ func (s *streamer) subscribeChannelEvents(ctx context.Context) {
 			}
 
 			payload := &infoPayload{
-				PrizePool: lotteryInfo.PrizePool,
-				Capacity:  lotteryInfo.Capacity,
+				PrizePool: &lotteryInfo.PrizePool,
+				Capacity:  &lotteryInfo.Capacity,
 			}
 			s.publish(infoEvent, payload)
 		}
@@ -278,7 +304,8 @@ func (s *streamer) subscribePayments(ctx context.Context) {
 		case lnrpc.Payment_FAILED:
 			// Give the funds back to the user
 			s.restoreFunds(payment.PaymentHash, entry)
-			s.logger.Errorf("Failed to pay invoice %s: %s", payment.PaymentHash, payment.FailureReason)
+			s.logger.Errorf("Failed to pay invoice %s: %s",
+				payment.PaymentHash, payment.FailureReason)
 
 			payload := &paymentsPayload{
 				PaymentID: entry.id,
@@ -309,9 +336,10 @@ func (s *streamer) subscribeWinners(ctx context.Context) {
 			}
 
 			payload := &infoPayload{
-				PrizePool: lotteryInfo.PrizePool,
-				Capacity:  lotteryInfo.Capacity,
-				Winners:   &winners,
+				PrizePool:  &lotteryInfo.PrizePool,
+				Capacity:   &lotteryInfo.Capacity,
+				Winners:    &winners,
+				NextHeight: &lotteryInfo.NextHeight,
 			}
 			s.publish(infoEvent, payload)
 
@@ -356,16 +384,22 @@ func (s *streamer) restoreFunds(rHash string, e entry) {
 	s.trackedPayments.Remove(rHash)
 
 	// We should restore the prizes only if the public key is stored as a winner
-	if _, err := s.db.Winners.GetPrizes(e.publicKey); err != nil {
+	if prizes, err := s.db.Prizes.Get(e.publicKey); err != nil || prizes == 0 {
 		s.logger.Error("tried restoring prizes to a user that is not a winner")
+		return
+	}
+
+	height, err := s.db.Lotteries.GetNextHeight()
+	if err != nil {
+		s.logger.Error("getting next height")
 		return
 	}
 
 	winner := db.Winner{
 		PublicKey: e.publicKey,
-		Prizes:    e.amount,
+		Prize:     e.amount,
 	}
-	if err := s.db.Winners.Add([]db.Winner{winner}); err != nil {
+	if err := s.db.Winners.Add(height, []db.Winner{winner}); err != nil {
 		s.logger.Error(
 			errors.Wrapf(err, "restoring funds. Public key %s, payment %s", e.publicKey, rHash),
 		)

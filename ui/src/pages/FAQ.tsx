@@ -15,26 +15,32 @@ interface FAQ {
 const FAQs: FAQ[] = [
 	{
 		question: "How do lotteries work?",
-		answer: `Users participate for the opportunity of winning the funds that were bet in the same UTC day. 
+		answer: `Users participate for the opportunity of winning the funds accumulated in the prize pool by the other participants' bets. Each lottery lasts 144 Bitcoin blocks (~24 hours).
 
-Winners are announced every day at 00:00:00 UTC using a cryptographically secure random number generator.
+Winning tickets are generated using the bytes of the Bitcoin block hash that was mined at the lottery height target.
 
-Prizes distribution as a percentage of the total prize pool:
+As soon as the block is mined, winners are announced and any user can generate the winning tickets themselves and verify that the prizes were correctly assigned.
 
-1st place: 50% 
-2nd place: 25%
-3rd place: 12.5%
-4th place: 6.25%
-5th place: 3.125%
-6th place: 1.5625%
-7th place: 0.78125%
-8th place: 0.390625%
+BTRY decodes the block hash and iterates the bytes in reverse, it uses two numbers to calculate each winning ticket. The formula used is (a ^ b) % prizePool.`,
+	},
+	{
+		question: "How are prizes distributed?",
+		answer: `Prizes as a percentage of the prize pool:
 
+1st: 50%
+2nd: 25%
+3rd: 12.5%
+4th: 6.25%
+5th: 3.125%
+6th: 1.5625%
+7th: 0.78125%
+8th: 0.390625%
+		
 BTRY fee: 0.390625%`,
 	},
 	{
 		question: "How long can I keep my prizes in the platform?",
-		answer: `Prizes expire after 120 hours (5 days). Consider enabling the notifications to receive a message if you win. 
+		answer: `Prizes expire after 720 blocks (~5 days). Consider enabling the notifications to receive a message if you win. 
 
 If BTRY were to hold prizes indefinitely, the node's ability to send and receive payments would eventually be annulled, since all the liquidity would be locked on the same side of the channels. In other words, local balance would be near 100% and remote balance would be near 0%.`,
 	},

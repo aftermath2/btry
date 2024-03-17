@@ -37,7 +37,7 @@ func (n *notifications) Add(publicKey string, chatID int64) error {
 	query := "INSERT INTO notifications (public_key, chat_id, service) VALUES (?,?,?)"
 	stmt, err := n.db.Prepare(query)
 	if err != nil {
-		return errors.Wrap(err, "preparing insert statement")
+		return errors.Wrap(err, "preparing statement")
 	}
 	defer stmt.Close()
 

@@ -134,24 +134,19 @@ func (b *bets) Reset() error {
 }
 
 func getHighestIndex(tx *sql.Tx) (uint64, error) {
-	stmt, err := tx.Prepare("SELECT MAX(idx) FROM bets")
+	stmt, err := tx.Prepare("SELECT COALESCE(MAX(idx), 0) FROM bets")
 	if err != nil {
 		return 0, errors.Wrap(err, "preparing statement")
 	}
 	defer stmt.Close()
 
-	var index *uint64
-	row := stmt.QueryRow()
-	if err := row.Scan(&index); err != nil {
+	var index uint64
+	if err := stmt.QueryRow().Scan(&index); err != nil {
 		if err == sql.ErrNoRows {
 			return 0, nil
 		}
 		return 0, errors.Wrap(err, "scanning highest index")
 	}
 
-	if index == nil {
-		return 0, nil
-	}
-
-	return *index, nil
+	return index, nil
 }

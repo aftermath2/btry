@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -51,11 +52,15 @@ func (c *ClientMock) DecodeInvoice(ctx context.Context, invoice string) (*lnrpc.
 	return r0, args.Error(1)
 }
 
-// LightningAddresses mock.
-func (c *ClientMock) LightningAddresses() []string {
-	args := c.Called()
-	addresses := args.Get(0).([]string)
-	return addresses
+// GetInfo mock.
+func (c *ClientMock) GetInfo(ctx context.Context) (*lnrpc.GetInfoResponse, error) {
+	args := c.Called(ctx)
+	var r0 *lnrpc.GetInfoResponse
+	v0 := args.Get(0)
+	if v0 != nil {
+		r0 = v0.(*lnrpc.GetInfoResponse)
+	}
+	return r0, args.Error(1)
 }
 
 // PayInvoice mock.
@@ -74,6 +79,17 @@ func (c *ClientMock) RemoteBalance(ctx context.Context) (int64, error) {
 	args := c.Called(ctx)
 	remoteBalance := args.Get(0).(int64)
 	return remoteBalance, args.Error(1)
+}
+
+// SubscribeBlocks mock.
+func (c *ClientMock) SubscribeBlocks(ctx context.Context) (Stream[*chainrpc.BlockEpoch], error) {
+	args := c.Called(ctx)
+	var r0 Stream[*chainrpc.BlockEpoch]
+	v0 := args.Get(0)
+	if v0 != nil {
+		r0 = v0.(Stream[*chainrpc.BlockEpoch])
+	}
+	return r0, args.Error(1)
 }
 
 // SubscribeChannelEvents mock.

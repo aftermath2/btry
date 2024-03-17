@@ -1,6 +1,6 @@
 import {
 	GetBetsResponse, GetInfoResponse, GetInvoiceResponse,
-	GetPrizesResponse, GetWinnersResponse, LNURLWithdrawResponse, WithdrawResponse
+	GetPrizesResponse, GetWinnersResponse, LNURLWithdrawResponse, GetHeightsResponse, WithdrawResponse
 } from "../types/api";
 import { HTTP } from "./http";
 import { Events, SSE } from "./sse";
@@ -39,6 +39,14 @@ export class API {
 		})
 	}
 
+	async GetHeights(offset: number = 0, limit: number = 0, reverse: boolean = false): Promise<GetHeightsResponse> {
+		return await HTTP.get<GetHeightsResponse>({
+			url: `${API_URL}/heights?offset=${offset}&limit=${limit}&reverse=${reverse}`,
+			keepalive: true,
+			signal: this.abortController.signal
+		})
+	}
+
 	async GetLottery(): Promise<GetInfoResponse> {
 		return await HTTP.get<GetInfoResponse>({
 			url: `${API_URL}/lottery`,
@@ -63,17 +71,9 @@ export class API {
 		})
 	}
 
-	async GetWinners(): Promise<GetWinnersResponse> {
+	async GetWinners(lotteryHeight: number): Promise<GetWinnersResponse> {
 		return await HTTP.get<GetWinnersResponse>({
-			url: `${API_URL}/winners`,
-			keepalive: true,
-			signal: this.abortController.signal
-		})
-	}
-
-	async GetWinnersHistory(from: number = 0, to: number = 0): Promise<GetWinnersResponse> {
-		return await HTTP.get<GetWinnersResponse>({
-			url: `${API_URL}/winners/history?from=${from}&to=${to}`,
+			url: `${API_URL}/winners?height=${lotteryHeight}`,
 			keepalive: true,
 			signal: this.abortController.signal
 		})

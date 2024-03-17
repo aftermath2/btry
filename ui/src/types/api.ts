@@ -39,6 +39,10 @@ export type GetWinnersResponse = {
 	readonly winners: Winner[]
 }
 
+export type GetHeightsResponse = {
+	readonly heights: number[]
+}
+
 export type WithdrawResponse = {
 	readonly status: string
 	readonly payment_id: number

@@ -19,6 +19,7 @@ import (
 	"github.com/aftermath2/BTRY/lottery"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/r3labs/sse"
 	"github.com/stretchr/testify/assert"
@@ -28,6 +29,8 @@ import (
 func TestNewStreamer(t *testing.T) {
 	lndMock := lightning.NewClientMock()
 
+	lndMock.On("SubscribeBlocks", context.Background()).
+		Return(lightning.BlockedStreamMock[*chainrpc.BlockEpoch]{}, nil)
 	lndMock.On("SubscribeChannelEvents", context.Background()).
 		Return(lightning.BlockedStreamMock[*lnrpc.ChannelEventUpdate]{}, nil)
 	lndMock.On("SubscribeInvoices", context.Background()).
@@ -40,6 +43,7 @@ func TestNewStreamer(t *testing.T) {
 		&db.DB{},
 		lndMock,
 		make(<-chan []db.Winner),
+		make(chan<- *chainrpc.BlockEpoch),
 	)
 	assert.NoError(t, err)
 
@@ -50,12 +54,14 @@ func TestNewStreamer(t *testing.T) {
 type SSESuite struct {
 	suite.Suite
 
-	betsMock    *db.BetsStoreMock
-	winnersMock *db.WinnersStoreMock
-	lndMock     *lightning.ClientMock
-	server      *ServerMock
-	winnersCh   chan []db.Winner
-	sse         streamer
+	betsMock      *db.BetsStoreMock
+	lotteriesMock *db.LotteriesStoreMock
+	prizesMock    *db.PrizesStoreMock
+	winnersMock   *db.WinnersStoreMock
+	lndMock       *lightning.ClientMock
+	server        *ServerMock
+	winnersCh     chan []db.Winner
+	sse           streamer
 }
 
 func TestSSESuite(t *testing.T) {
@@ -67,6 +73,8 @@ func (s *SSESuite) SetupTest() {
 	s.NoError(err)
 
 	s.betsMock = db.NewBetsStoreMock()
+	s.lotteriesMock = db.NewLotteriesStoreMock()
+	s.prizesMock = db.NewPrizesStoreMock()
 	s.winnersMock = db.NewWinnersStoreMock()
 	s.lndMock = lightning.NewClientMock()
 	s.server = NewServerMock()
@@ -78,8 +86,10 @@ func (s *SSESuite) SetupTest() {
 		lnd:             s.lndMock,
 		trackedPayments: cmap.New[entry](),
 		db: &db.DB{
-			Bets:    s.betsMock,
-			Winners: s.winnersMock,
+			Bets:      s.betsMock,
+			Lotteries: s.lotteriesMock,
+			Prizes:    s.prizesMock,
+			Winners:   s.winnersMock,
 		},
 	}
 }
@@ -187,10 +197,13 @@ func (s *SSESuite) TestSubscribeChannelEvents() {
 
 	s.lndMock.On("RemoteBalance", ctx).Return(remoteBalance, nil)
 	s.betsMock.On("GetPrizePool").Return(prizePool, nil)
+	s.lotteriesMock.On("GetNextHeight").Return(uint32(1), nil)
 
+	pp := int64(prizePool)
+	capacity := remoteBalance / lottery.CapacityDivisor
 	payload := &infoPayload{
-		PrizePool: int64(prizePool),
-		Capacity:  remoteBalance / lottery.CapacityDivisor,
+		PrizePool: &pp,
+		Capacity:  &capacity,
 	}
 
 	data, err := json.Marshal(payload)
@@ -325,8 +338,8 @@ func (s *SSESuite) TestSubscribePaymentsFailed() {
 	}
 	id := s.sse.TrackPayment(rHash, publicKey, amount)
 
-	winners := []db.Winner{{PublicKey: publicKey, Prizes: amount}}
-	s.winnersMock.On("GetPrizes", publicKey).Return(uint64(0), nil)
+	s.prizesMock.On("Get", publicKey).Return(uint64(0), nil)
+	winners := []db.Winner{{PublicKey: publicKey, Prize: amount}}
 	s.winnersMock.On("Add", winners).Return(nil)
 
 	payload := &paymentsPayload{
@@ -362,15 +375,20 @@ func (s *SSESuite) TestSubscribeWinners() {
 	ctx, cancel := context.WithCancel(context.Background())
 	remoteBalance := int64(10)
 	prizePool := uint64(25000)
-	winners := []db.Winner{{PublicKey: "winner", Prizes: 10, Ticket: 1}}
+	nextHeight := uint32(1)
+	winners := []db.Winner{{PublicKey: "winner", Prize: 10, Ticket: 1}}
 
 	s.lndMock.On("RemoteBalance", ctx).Return(remoteBalance, nil)
 	s.betsMock.On("GetPrizePool").Return(prizePool, nil)
+	s.lotteriesMock.On("GetNextHeight").Return(nextHeight, nil)
 
+	pp := int64(prizePool)
+	capacity := remoteBalance / lottery.CapacityDivisor
 	payload := &infoPayload{
-		PrizePool: int64(prizePool),
-		Capacity:  remoteBalance / lottery.CapacityDivisor,
-		Winners:   &winners,
+		PrizePool:  &pp,
+		Capacity:   &capacity,
+		Winners:    &winners,
+		NextHeight: &nextHeight,
 	}
 
 	data, err := json.Marshal(payload)
@@ -431,10 +449,12 @@ func (s *SSESuite) TestRestoreFunds() {
 	}
 	s.sse.trackedPayments.Set(rHash, entry)
 
-	s.winnersMock.On("GetPrizes", entry.publicKey).Return(uint64(0), nil)
+	s.prizesMock.On("Get", entry.publicKey).Return(uint64(0), nil)
+	nextHeight := uint32(1)
+	s.lotteriesMock.On("GetNextHeight").Return(nextHeight, nil)
 
-	winner := db.Winner{PublicKey: entry.publicKey, Prizes: entry.amount}
-	s.winnersMock.On("Add", []db.Winner{winner}).Return(nil)
+	winner := db.Winner{PublicKey: entry.publicKey, Prize: entry.amount}
+	s.winnersMock.On("Add", nextHeight, []db.Winner{winner}).Return(nil)
 
 	s.sse.restoreFunds(rHash, entry)
 

@@ -44,7 +44,7 @@ func (h *HandlerSuite) TestWithdraw() {
 	h.lndMock.On("DecodeInvoice", ctx, paymentRequest).Return(invoice, nil)
 
 	withdrawAmount := uint64(invoice.NumSatoshis + fee)
-	h.winnersMock.On("ClaimPrizes", validPublicKey, withdrawAmount).Return(nil)
+	h.prizesMock.On("Withdraw", validPublicKey, withdrawAmount).Return(nil)
 
 	h.lndMock.On("PayInvoice", ctx, invoice, fee, false).Return(nil, nil)
 
@@ -140,7 +140,7 @@ func (h *HandlerSuite) TestWithdrawInsufficientPrizes() {
 	h.lndMock.On("DecodeInvoice", ctx, paymentRequest).Return(invoice, nil)
 
 	withdrawAmount := uint64(invoice.NumSatoshis + fee)
-	h.winnersMock.On("ClaimPrizes", validPublicKey, withdrawAmount).Return(db.ErrInsufficientPrizes)
+	h.prizesMock.On("Withdraw", validPublicKey, withdrawAmount).Return(db.ErrInsufficientPrizes)
 
 	h.handler.Withdraw(h.rec, h.req)
 
@@ -242,7 +242,7 @@ func (h *HandlerSuite) TestWithdrawPayInvoiceError() {
 	h.lndMock.On("DecodeInvoice", ctx, paymentRequest).Return(invoice, nil)
 
 	withdrawAmount := uint64(invoice.NumSatoshis + fee)
-	h.winnersMock.On("ClaimPrizes", validPublicKey, withdrawAmount).Return(nil)
+	h.prizesMock.On("Withdraw", validPublicKey, withdrawAmount).Return(nil)
 
 	paymentID := uint64(654)
 	h.eventStreamerMock.On("TrackPayment", invoice.PaymentHash, validPublicKey, withdrawAmount).

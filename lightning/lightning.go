@@ -11,6 +11,7 @@ import (
 	"github.com/aftermath2/BTRY/logger"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/pkg/errors"
@@ -35,8 +36,10 @@ type Stream[T any] interface {
 type Client interface {
 	AddInvoice(ctx context.Context, amountSat uint64) (*lnrpc.AddInvoiceResponse, error)
 	DecodeInvoice(ctx context.Context, invoice string) (*lnrpc.PayReq, error)
+	GetInfo(ctx context.Context) (*lnrpc.GetInfoResponse, error)
 	PayInvoice(ctx context.Context, invoice *lnrpc.PayReq, feeSat int64, inflightUpdates bool) (Stream[*lnrpc.Payment], error)
 	RemoteBalance(ctx context.Context) (int64, error)
+	SubscribeBlocks(ctx context.Context) (Stream[*chainrpc.BlockEpoch], error)
 	SubscribeChannelEvents(ctx context.Context) (Stream[*lnrpc.ChannelEventUpdate], error)
 	SubscribeInvoices(ctx context.Context) (Stream[*lnrpc.Invoice], error)
 	SubscribePayments(ctx context.Context) (Stream[*lnrpc.Payment], error)
@@ -44,6 +47,7 @@ type Client interface {
 
 type client struct {
 	ln     lnrpc.LightningClient
+	chain  chainrpc.ChainNotifierClient
 	router routerrpc.RouterClient
 	logger *logger.Logger
 }
@@ -67,6 +71,7 @@ func NewClient(config config.Lightning) (Client, error) {
 
 	return &client{
 		ln:     lnrpc.NewLightningClient(conn),
+		chain:  chainrpc.NewChainNotifierClient(conn),
 		router: routerrpc.NewRouterClient(conn),
 		logger: logger,
 	}, nil
@@ -114,6 +119,11 @@ func (c *client) AddInvoice(ctx context.Context, amountSat uint64) (*lnrpc.AddIn
 // BOLT-0011 and matches the provided active network.
 func (c *client) DecodeInvoice(ctx context.Context, invoice string) (*lnrpc.PayReq, error) {
 	return c.ln.DecodePayReq(ctx, &lnrpc.PayReqString{PayReq: invoice})
+}
+
+// GetInfo returns general information concerning the lightning node.
+func (c *client) GetInfo(ctx context.Context) (*lnrpc.GetInfoResponse, error) {
+	return c.ln.GetInfo(ctx, &lnrpc.GetInfoRequest{})
 }
 
 // PayInvoice attempts to route a payment to the final destination.
@@ -169,6 +179,12 @@ func (c *client) RemoteBalance(ctx context.Context) (int64, error) {
 	}
 
 	return remoteBalance, nil
+}
+
+// SubscribeBlocks creates a uni-directional stream from the server to the client in which
+// any updates relevant to new blocks are sent over.
+func (c *client) SubscribeBlocks(ctx context.Context) (Stream[*chainrpc.BlockEpoch], error) {
+	return c.chain.RegisterBlockEpochNtfn(ctx, nil)
 }
 
 // SubscribeChannelEvents creates a uni-directional stream from the server to the client in which

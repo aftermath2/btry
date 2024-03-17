@@ -14,11 +14,28 @@ func (h *HandlerSuite) TestGetPrizes() {
 	h.SetAuthorizationKey(publicKey)
 
 	prizes := uint64(100)
-	h.winnersMock.On("GetPrizes", publicKey).Return(prizes, nil)
+	h.prizesMock.On("Get", publicKey).Return(prizes, nil)
 
 	h.handler.GetPrizes(h.rec, h.req)
 
-	var response handler.PrizesResponse
+	var response handler.GetPrizesResponse
+	err := json.NewDecoder(h.rec.Body).Decode(&response)
+	h.NoError(err)
+
+	h.Equal(http.StatusOK, h.rec.Code)
+	h.Equal(prizes, response.Prizes)
+}
+
+func (h *HandlerSuite) TestGetPrizesNoPrizes() {
+	publicKey := "e68b99fc5f60c971926fdc3a3af38ccf67e6f4306ab1c388735533e7c5dcc749"
+	h.SetAuthorizationKey(publicKey)
+
+	prizes := uint64(0)
+	h.prizesMock.On("Get", publicKey).Return(prizes, nil)
+
+	h.handler.GetPrizes(h.rec, h.req)
+
+	var response handler.GetPrizesResponse
 	err := json.NewDecoder(h.rec.Body).Decode(&response)
 	h.NoError(err)
 
@@ -39,7 +56,7 @@ func (h *HandlerSuite) TestGetPrizesInternalError() {
 	h.SetAuthorizationKey(publicKey)
 
 	expectedErr := errors.New("test err")
-	h.winnersMock.On("GetPrizes", publicKey).Return(uint64(0), expectedErr)
+	h.prizesMock.On("Get", publicKey).Return(uint64(0), expectedErr)
 
 	h.handler.GetPrizes(h.rec, h.req)
 

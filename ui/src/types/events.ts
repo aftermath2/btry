@@ -7,8 +7,9 @@ export enum Status {
 
 export type InfoPayload = {
 	readonly winners?: Winner[]
-	readonly capacity: number
-	readonly prize_pool: number
+	readonly capacity?: number
+	readonly prize_pool?: number
+	readonly next_height?: number
 }
 
 export type InvoicesPayload = {

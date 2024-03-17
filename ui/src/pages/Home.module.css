@@ -30,12 +30,12 @@
 	font-weight: 600;
 }
 
-.time_left {
+.block_height {
 	font-size: 1.125rem;
 	font-weight: 600;
 }
 
-.time_left_num {
+.block_height_num {
 	color: var(--white);
 	font-size: 1.875rem;
 	margin: 0;
@@ -70,7 +70,7 @@
 		font-size: 1.125rem;
 	}
 
-	.time_left {
+	.block_height {
 		font-size: 1.125rem;
 	}
 

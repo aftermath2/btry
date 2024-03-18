@@ -139,7 +139,7 @@ func (l *Lottery) Start() error {
 }
 
 func (l *Lottery) raffle(block *chainrpc.BlockEpoch) error {
-	bets, err := l.db.Bets.List(0, 0, false)
+	bets, err := l.db.Bets.List(block.Height, 0, 0, false)
 	if err != nil {
 		return errors.Wrap(err, "listing bets")
 	}
@@ -148,13 +148,9 @@ func (l *Lottery) raffle(block *chainrpc.BlockEpoch) error {
 		return nil
 	}
 
-	prizePool, err := l.db.Bets.GetPrizePool()
+	prizePool, err := l.db.Bets.GetPrizePool(block.Height)
 	if err != nil {
 		return err
-	}
-
-	if err := l.db.Bets.Reset(); err != nil {
-		return errors.Wrap(err, "deleting bets")
 	}
 
 	winners, err := l.getWinners(block.Hash, prizePool, bets)
@@ -288,12 +284,12 @@ func GetInfo(ctx context.Context, lnd lightning.Client, db *db.DB) (Info, error)
 		return Info{}, err
 	}
 
-	prizePool, err := db.Bets.GetPrizePool()
+	nextHeight, err := db.Lotteries.GetNextHeight()
 	if err != nil {
 		return Info{}, err
 	}
 
-	nextHeight, err := db.Lotteries.GetNextHeight()
+	prizePool, err := db.Bets.GetPrizePool(nextHeight)
 	if err != nil {
 		return Info{}, err
 	}

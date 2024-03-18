@@ -1,6 +1,7 @@
 import {
 	GetBetsResponse, GetInfoResponse, GetInvoiceResponse,
-	GetPrizesResponse, GetWinnersResponse, LNURLWithdrawResponse, GetHeightsResponse, WithdrawResponse
+	GetPrizesResponse, GetWinnersResponse, LNURLWithdrawResponse,
+	GetHeightsResponse, WithdrawResponse
 } from "../types/api";
 import { HTTP } from "./http";
 import { Events, SSE } from "./sse";
@@ -31,15 +32,24 @@ export class API {
 		this.abortController = new AbortController()
 	}
 
-	async GetBets(offset: number = 0, limit: number = 0, reverse: boolean = false): Promise<GetBetsResponse> {
+	async GetBets(
+		lotteryHeight: number,
+		offset: number = 0,
+		limit: number = 0,
+		reverse: boolean = false,
+	): Promise<GetBetsResponse> {
 		return await HTTP.get<GetBetsResponse>({
-			url: `${API_URL}/bets?offset=${offset}&limit=${limit}&reverse=${reverse}`,
+			url: `${API_URL}/bets?height=${lotteryHeight}&offset=${offset}&limit=${limit}&reverse=${reverse}`,
 			keepalive: true,
 			signal: this.abortController.signal
 		})
 	}
 
-	async GetHeights(offset: number = 0, limit: number = 0, reverse: boolean = false): Promise<GetHeightsResponse> {
+	async GetHeights(
+		offset: number = 0,
+		limit: number = 0,
+		reverse: boolean = false,
+	): Promise<GetHeightsResponse> {
 		return await HTTP.get<GetHeightsResponse>({
 			url: `${API_URL}/heights?offset=${offset}&limit=${limit}&reverse=${reverse}`,
 			keepalive: true,
@@ -87,7 +97,12 @@ export class API {
 		})
 	}
 
-	async Withdraw(k1: string, pr: string, publicKey: string, fee: number): Promise<WithdrawResponse> {
+	async Withdraw(
+		k1: string,
+		pr: string,
+		publicKey: string,
+		fee: number,
+	): Promise<WithdrawResponse> {
 		return await HTTP.post<WithdrawResponse>({
 			url: `${API_URL}/withdraw?k1=${k1}&pr=${pr}&pubkey=${publicKey}&fee=${fee}`,
 			keepalive: true,

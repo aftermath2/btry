@@ -194,10 +194,11 @@ func (s *SSESuite) TestSubscribeChannelEvents() {
 
 	remoteBalance := int64(2_500_000)
 	prizePool := uint64(1_000_000)
+	blockHeight := uint32(1)
 
 	s.lndMock.On("RemoteBalance", ctx).Return(remoteBalance, nil)
-	s.betsMock.On("GetPrizePool").Return(prizePool, nil)
-	s.lotteriesMock.On("GetNextHeight").Return(uint32(1), nil)
+	s.lotteriesMock.On("GetNextHeight").Return(blockHeight, nil)
+	s.betsMock.On("GetPrizePool", blockHeight).Return(prizePool, nil)
 
 	pp := int64(prizePool)
 	capacity := remoteBalance / lottery.CapacityDivisor
@@ -379,8 +380,8 @@ func (s *SSESuite) TestSubscribeWinners() {
 	winners := []db.Winner{{PublicKey: "winner", Prize: 10, Ticket: 1}}
 
 	s.lndMock.On("RemoteBalance", ctx).Return(remoteBalance, nil)
-	s.betsMock.On("GetPrizePool").Return(prizePool, nil)
 	s.lotteriesMock.On("GetNextHeight").Return(nextHeight, nil)
+	s.betsMock.On("GetPrizePool", nextHeight).Return(prizePool, nil)
 
 	pp := int64(prizePool)
 	capacity := remoteBalance / lottery.CapacityDivisor

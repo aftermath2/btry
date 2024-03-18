@@ -23,7 +23,7 @@ var (
 	}
 )
 
-const height uint32 = 1
+const lotteryHeight uint32 = 1
 
 type WinnersSuite struct {
 	suite.Suite
@@ -38,11 +38,11 @@ func TestWinnersSuite(t *testing.T) {
 func (w *WinnersSuite) SetupTest() {
 	db := setupDB(w.T(), func(db *sql.DB) {
 		lotteriesQuery := `INSERT INTO lotteries (height) VALUES (?)`
-		_, err := db.Exec(lotteriesQuery, height)
+		_, err := db.Exec(lotteriesQuery, lotteryHeight)
 		w.NoError(err)
 		query := `DELETE FROM winners;
 		INSERT INTO winners (public_key, prize, ticket, lottery_height) VALUES (?, ?, ?, ?);`
-		_, err = db.Exec(query, testWinner.PublicKey, testWinner.Prize, testWinner.Ticket, height)
+		_, err = db.Exec(query, testWinner.PublicKey, testWinner.Prize, testWinner.Ticket, lotteryHeight)
 		w.NoError(err)
 	})
 	w.db = db.Winners
@@ -54,12 +54,12 @@ func (w *WinnersSuite) TestAddWinners() {
 		Prize:     2016,
 		Ticket:    21,
 	}
-	err := w.db.Add(height, []database.Winner{winner})
+	err := w.db.Add(lotteryHeight, []database.Winner{winner})
 	w.NoError(err)
 }
 
 func (w *WinnersSuite) TestList() {
-	winners, err := w.db.List(height)
+	winners, err := w.db.List(lotteryHeight)
 	w.NoError(err)
 
 	w.Len(winners, 1)

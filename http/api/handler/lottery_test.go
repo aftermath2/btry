@@ -17,9 +17,9 @@ func (h *HandlerSuite) TestGetLottery() {
 	remoteBalance := int64(500000)
 	h.lndMock.On("RemoteBalance", h.req.Context()).Return(remoteBalance, nil)
 	prizePool := uint64(50000)
-	h.betsMock.On("GetPrizePool").Return(prizePool, nil)
 	nextHeight := uint32(145)
 	h.lotteriesMock.On("GetNextHeight").Return(nextHeight, nil)
+	h.betsMock.On("GetPrizePool", nextHeight).Return(prizePool, nil)
 
 	h.handler.GetLottery(h.rec, h.req)
 

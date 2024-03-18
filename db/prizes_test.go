@@ -22,11 +22,11 @@ func TestPrizesSuite(t *testing.T) {
 func (p *PrizesSuite) SetupTest() {
 	db := setupDB(p.T(), func(db *sql.DB) {
 		lotteriesQuery := `INSERT INTO lotteries (height) VALUES (?)`
-		_, err := db.Exec(lotteriesQuery, height)
+		_, err := db.Exec(lotteriesQuery, lotteryHeight)
 		p.NoError(err)
 		query := `DELETE FROM prizes;
 		INSERT INTO prizes (public_key, amount, lottery_height) VALUES (?, ?, ?);`
-		_, err = db.Exec(query, testWinner.PublicKey, testWinner.Prize, height)
+		_, err = db.Exec(query, testWinner.PublicKey, testWinner.Prize, lotteryHeight)
 		p.NoError(err)
 	})
 	p.db = db.Prizes
@@ -38,7 +38,7 @@ func (p *PrizesSuite) TestPrizesAccumulation() {
 		Prize:     2016,
 		Ticket:    21,
 	}
-	err := p.db.Set(height, []database.Winner{winner, winner, winner})
+	err := p.db.Set(lotteryHeight, []database.Winner{winner, winner, winner})
 	p.NoError(err)
 
 	prizes, err := p.db.Get(winner.PublicKey)
@@ -68,7 +68,7 @@ func (p *PrizesSuite) TestGet() {
 }
 
 func (p *PrizesSuite) TestGetMany() {
-	err := p.db.Set(height, []database.Winner{testWinner2, testWinner2})
+	err := p.db.Set(lotteryHeight, []database.Winner{testWinner2, testWinner2})
 	p.NoError(err)
 
 	prizes, err := p.db.Get(testWinner2.PublicKey)

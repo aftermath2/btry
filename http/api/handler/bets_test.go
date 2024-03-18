@@ -62,6 +62,7 @@ func (h *HandlerSuite) SetDefaultAuthorizationKey() {
 }
 
 func (h *HandlerSuite) TestGetBets() {
+	height := uint32(256)
 	bets := []db.Bet{
 		{
 			PublicKey: "pubkey",
@@ -74,8 +75,11 @@ func (h *HandlerSuite) TestGetBets() {
 			Tickets:   8,
 		},
 	}
-	h.betsMock.On("List", uint64(0), uint64(0), false).Return(bets, nil)
+	h.betsMock.On("List", height, uint64(0), uint64(0), false).Return(bets, nil)
 
+	url := url.Values{}
+	url.Add("height", strconv.FormatUint(uint64(height), 10))
+	h.req = httptest.NewRequest(http.MethodPost, "/bets?"+url.Encode(), nil)
 	h.handler.GetBets(h.rec, h.req)
 
 	var response handler.BetsResponse
@@ -87,17 +91,19 @@ func (h *HandlerSuite) TestGetBets() {
 }
 
 func (h *HandlerSuite) TestGetBetsParameters() {
+	height := uint32(256)
 	offset := uint64(1)
 	limit := uint64(5)
 	reverse := true
 
 	url := url.Values{}
+	url.Add("height", strconv.FormatUint(uint64(height), 10))
 	url.Add("offset", strconv.FormatUint(offset, 10))
 	url.Add("limit", strconv.FormatUint(limit, 10))
 	url.Add("reverse", strconv.FormatBool(reverse))
 	h.req = httptest.NewRequest(http.MethodPost, "/bets?"+url.Encode(), nil)
 
-	h.betsMock.On("List", offset, limit, reverse).Return([]db.Bet{}, nil)
+	h.betsMock.On("List", height, offset, limit, reverse).Return([]db.Bet{}, nil)
 
 	h.handler.GetBets(h.rec, h.req)
 
@@ -130,6 +136,7 @@ func (h *HandlerSuite) TestGetBetsInvalidParameters() {
 	for _, tc := range cases {
 		h.Run(tc.desc, func() {
 			url := url.Values{}
+			url.Add("height", strconv.FormatUint(1, 10))
 			url.Add(tc.key, tc.value)
 			h.req = httptest.NewRequest(http.MethodPost, "/bets?"+url.Encode(), nil)
 
@@ -141,9 +148,13 @@ func (h *HandlerSuite) TestGetBetsInvalidParameters() {
 }
 
 func (h *HandlerSuite) TestGetBetsInternalError() {
+	height := uint32(1)
 	expectedErr := errors.New("test error")
-	h.betsMock.On("List", uint64(0), uint64(0), false).Return([]db.Bet{}, expectedErr)
+	h.betsMock.On("List", height, uint64(0), uint64(0), false).Return([]db.Bet{}, expectedErr)
 
+	url := url.Values{}
+	url.Add("height", strconv.FormatUint(uint64(height), 10))
+	h.req = httptest.NewRequest(http.MethodPost, "/bets?"+url.Encode(), nil)
 	h.handler.GetBets(h.rec, h.req)
 
 	var response handler.ErrorResponse

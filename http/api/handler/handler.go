@@ -52,9 +52,12 @@ func getAuthPublicKey(r *http.Request) (string, error) {
 	return publicKey, nil
 }
 
-func parseIntParam(query url.Values, key string) (uint64, error) {
+func parseIntParam(query url.Values, key string, required bool) (uint64, error) {
 	str := query.Get(key)
 	if str == "" {
+		if required {
+			return 0, errors.Errorf("query parameter %q is required", key)
+		}
 		return 0, nil
 	}
 

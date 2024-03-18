@@ -28,13 +28,13 @@ func (h *Handler) GetLottery(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetHeights(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
-	offset, err := parseIntParam(query, "offset")
+	offset, err := parseIntParam(query, "offset", false)
 	if err != nil {
 		sendLNURLError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	limit, err := parseIntParam(query, "limit")
+	limit, err := parseIntParam(query, "limit", false)
 	if err != nil {
 		sendLNURLError(w, http.StatusBadRequest, err)
 		return

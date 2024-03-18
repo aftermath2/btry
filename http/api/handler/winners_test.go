@@ -26,6 +26,7 @@ func (h *HandlerSuite) TestGetWinners() {
 	}
 	h.winnersMock.On("List", uint32(0)).Return(winners, nil)
 
+	h.req = httptest.NewRequest(http.MethodGet, "/winners?height=0", nil)
 	h.handler.GetWinners(h.rec, h.req)
 
 	var response handler.WinnersResponse
@@ -46,6 +47,7 @@ func (h *HandlerSuite) TestGetWinnersInternalError() {
 	expectedErr := errors.New("test err")
 	h.winnersMock.On("List", uint32(0)).Return(nil, expectedErr)
 
+	h.req = httptest.NewRequest(http.MethodGet, "/winners?height=0", nil)
 	h.handler.GetWinners(h.rec, h.req)
 
 	var response handler.ErrorResponse

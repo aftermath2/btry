@@ -18,13 +18,19 @@ type BetsResponse struct {
 func (h *Handler) GetBets(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
-	offset, err := parseIntParam(query, "offset")
+	height, err := parseIntParam(query, "height", true)
 	if err != nil {
 		sendLNURLError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	limit, err := parseIntParam(query, "limit")
+	offset, err := parseIntParam(query, "offset", false)
+	if err != nil {
+		sendLNURLError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	limit, err := parseIntParam(query, "limit", false)
 	if err != nil {
 		sendLNURLError(w, http.StatusBadRequest, err)
 		return
@@ -41,7 +47,7 @@ func (h *Handler) GetBets(w http.ResponseWriter, r *http.Request) {
 		reverse = v
 	}
 
-	bets, err := h.db.Bets.List(offset, limit, reverse)
+	bets, err := h.db.Bets.List(uint32(height), offset, limit, reverse)
 	if err != nil {
 		sendError(w, http.StatusInternalServerError, err)
 		return

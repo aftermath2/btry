@@ -60,7 +60,7 @@ func (db *DB) Close() error {
 }
 
 // AddPagination returns the pagination part of an SQL query.
-func AddPagination(offset, limit uint64, sortField string, reverse bool) string {
+func AddPagination(query string, offset, limit uint64, sortField string, reverse bool) string {
 	// Safety mechanism to avoid SQL injections (although sortField should always be hardcoded),
 	// parameterized column names are not supported
 	if strings.ContainsAny(sortField, ";'\"%\n\t\r\b-/*\\") {
@@ -68,26 +68,35 @@ func AddPagination(offset, limit uint64, sortField string, reverse bool) string 
 	}
 
 	var sb strings.Builder
+	sb.WriteString(query)
 
 	if offset > 0 {
+		if strings.Contains(query, "WHERE") {
+			sb.WriteString(" AND ")
+		} else {
+			sb.WriteString(" WHERE ")
+		}
+
+		sb.WriteString(sortField)
+		sb.WriteByte(' ')
+
 		sign := '>'
 		if reverse {
 			sign = '<'
 		}
-		sb.WriteString(" WHERE ")
-		sb.WriteString(sortField)
-		sb.WriteByte(' ')
 		sb.WriteRune(sign)
+
 		sb.WriteString(strconv.FormatUint(offset, 10))
 	}
+
+	sb.WriteString(" ORDER BY ")
+	sb.WriteString(sortField)
+	sb.WriteByte(' ')
 
 	orderDirection := "ASC"
 	if reverse {
 		orderDirection = "DESC"
 	}
-	sb.WriteString(" ORDER BY ")
-	sb.WriteString(sortField)
-	sb.WriteByte(' ')
 	sb.WriteString(orderDirection)
 
 	if limit > 0 {
@@ -113,9 +122,12 @@ func BulkInsertValues(rows, values int) string {
 
 const migrations = `
 CREATE TABLE IF NOT EXISTS bets (
-	idx INTEGER PRIMARY KEY CHECK (idx > 0),
+	idx INTEGER NOT NULL CHECK (idx > 0),
 	tickets INTEGER CHECK (tickets > 0),
-	public_key VARCHAR(64) NOT NULL
+	public_key VARCHAR(64) NOT NULL,
+	lottery_height INTEGER NOT NULL,
+	FOREIGN KEY (lottery_height) REFERENCES lotteries(height),
+	PRIMARY KEY (idx, lottery_height)
 );
 
 CREATE TABLE IF NOT EXISTS winners (

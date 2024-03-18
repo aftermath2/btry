@@ -10,7 +10,7 @@ interface FAQ {
 }
 
 // TODO: 
-// - get variable information from the server
+// - get information from the configuration/local file at compile time
 // - translate questions and answers
 const FAQs: FAQ[] = [
 	{
@@ -62,14 +62,14 @@ However, we do plan to accept on-chain transactions and even provide winners the
 
 4. Open a channel to BTRY's node and swap out the funds to have enough inbound liquidity.`
 	},
-	{
-		question: "How do I connect to BTRY's Lightning node?",
-		answer: `Clearnet address: 
-032c52ba7d06c6361bc137bf0b78e47ad09b46014ca8d0c1b5d005180207373a37@5.75.184.195:40705
+	// 	{
+	// 		question: "How do I connect to BTRY's Lightning node?",
+	// 		answer: `Clearnet address: 
+	// <clearnet_address>
 
-Tor address: 
-032c52ba7d06c6361bc137bf0b78e47ad09b46014ca8d0c1b5d005180207373a37@zx4ek52khoefpt4kuztqqd7cybnx66ls3whdwlt4ktjpplgckb3bc6qd.onion:9735`,
-	},
+	// Tor address: 
+	// <tor_address>`,
+	// 	},
 ]
 
 const FAQ: Component = () => {

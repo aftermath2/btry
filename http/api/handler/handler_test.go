@@ -59,16 +59,29 @@ func TestParseIntParam(t *testing.T) {
 		desc          string
 		value         string
 		expectedValue uint64
+		required      bool
 		fail          bool
 	}{
 		{
 			desc:          "Default value",
 			expectedValue: 0,
+			required:      false,
 		},
 		{
 			desc:          "Specified value",
 			value:         "10",
 			expectedValue: 10,
+		},
+		{
+			desc:          "Specified required value",
+			value:         "1",
+			expectedValue: 1,
+			required:      true,
+		},
+		{
+			desc:     "Required but empty value",
+			required: true,
+			fail:     true,
 		},
 		{
 			desc:  "Invalid value (negative)",
@@ -95,7 +108,7 @@ func TestParseIntParam(t *testing.T) {
 
 			req := httptest.NewRequest(http.MethodGet, "/?"+values.Encode(), nil)
 
-			actualValue, err := parseIntParam(req.URL.Query(), key)
+			actualValue, err := parseIntParam(req.URL.Query(), key, tc.required)
 			if tc.fail {
 				assert.Error(t, err)
 			} else {

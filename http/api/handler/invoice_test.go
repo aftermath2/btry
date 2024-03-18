@@ -20,9 +20,10 @@ func (h *HandlerSuite) TestGetInvoice() {
 	h.SetAuthorizationKey(publicKey)
 
 	ctx := h.req.Context()
-	h.betsMock.On("GetPrizePool").Return(uint64(0), nil)
+	blockHeight := uint32(1)
 	h.lndMock.On("RemoteBalance", ctx).Return(int64(1_000_000), nil)
-	h.lotteriesMock.On("GetNextHeight").Return(uint32(1), nil)
+	h.lotteriesMock.On("GetNextHeight").Return(blockHeight, nil)
+	h.betsMock.On("GetPrizePool", blockHeight).Return(uint64(0), nil)
 
 	addInvoiceResp := &lnrpc.AddInvoiceResponse{
 		RHash:          []byte("rhash"),
@@ -67,9 +68,10 @@ func (h *HandlerSuite) TestGetInvoiceExceedsCapacity() {
 	h.req = httptest.NewRequest(http.MethodGet, "/invoice?amount=5000000", nil)
 	h.SetDefaultAuthorizationKey()
 
+	blockHeight := uint32(1)
 	h.lndMock.On("RemoteBalance", h.req.Context()).Return(int64(5000000), nil)
-	h.betsMock.On("GetPrizePool").Return(uint64(0), nil)
-	h.lotteriesMock.On("GetNextHeight").Return(uint32(1), nil)
+	h.lotteriesMock.On("GetNextHeight").Return(blockHeight, nil)
+	h.betsMock.On("GetPrizePool", blockHeight).Return(uint64(0), nil)
 
 	h.handler.GetInvoice(h.rec, h.req)
 
@@ -101,9 +103,10 @@ func (h *HandlerSuite) TestGetInvoiceAddInvoiceError() {
 	h.SetDefaultAuthorizationKey()
 
 	ctx := h.req.Context()
-	h.betsMock.On("GetPrizePool").Return(uint64(0), nil)
+	blockHeight := uint32(1)
 	h.lndMock.On("RemoteBalance", ctx).Return(int64(1_000_000), nil)
-	h.lotteriesMock.On("GetNextHeight").Return(uint32(1), nil)
+	h.lotteriesMock.On("GetNextHeight").Return(blockHeight, nil)
+	h.betsMock.On("GetPrizePool", blockHeight).Return(uint64(0), nil)
 
 	expectedErr := errors.New("test err")
 	h.lndMock.On("AddInvoice", ctx, amount).Return(nil, expectedErr)

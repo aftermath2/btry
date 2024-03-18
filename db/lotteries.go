@@ -60,16 +60,15 @@ func (l *lotteries) DeleteHeight(height uint32) error {
 }
 
 func (l *lotteries) GetNextHeight() (uint32, error) {
-	query := "SELECT COALESCE(MAX(height), 0) FROM lotteries"
-	stmt, err := l.db.Prepare(query)
+	tx, err := l.db.Begin()
 	if err != nil {
-		return 0, errors.Wrap(err, "preparing statement")
+		return 0, errors.Wrap(err, "starting transaction")
 	}
-	defer stmt.Close()
+	defer tx.Rollback()
 
-	var height uint32
-	if err := stmt.QueryRow(query).Scan(&height); err != nil {
-		return 0, errors.Wrap(err, "scanning height")
+	height, err := getNextHeight(tx)
+	if err != nil {
+		return 0, err
 	}
 
 	return height, nil
@@ -77,13 +76,12 @@ func (l *lotteries) GetNextHeight() (uint32, error) {
 
 func (l *lotteries) ListHeights(offset, limit uint64, reverse bool) ([]uint32, error) {
 	// Cap limit to avoid creating a slice with too big capacity
-	if limit > 100 {
-		limit = 100
+	if limit > 500 {
+		limit = 500
 	}
 
 	query := "SELECT height FROM lotteries"
-	clauses := AddPagination(offset, limit, "height", reverse)
-	query += clauses
+	query = AddPagination(query, offset, limit, "height", reverse)
 
 	stmt, err := l.db.Prepare(query)
 	if err != nil {
@@ -108,4 +106,20 @@ func (l *lotteries) ListHeights(offset, limit uint64, reverse bool) ([]uint32, e
 	}
 
 	return heights, nil
+}
+
+func getNextHeight(tx *sql.Tx) (uint32, error) {
+	query := "SELECT COALESCE(MAX(height), 0) FROM lotteries"
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		return 0, errors.Wrap(err, "preparing statement")
+	}
+	defer stmt.Close()
+
+	var height uint32
+	if err := stmt.QueryRow(query).Scan(&height); err != nil {
+		return 0, errors.Wrap(err, "scanning height")
+	}
+
+	return height, nil
 }

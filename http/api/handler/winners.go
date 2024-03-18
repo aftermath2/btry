@@ -15,7 +15,7 @@ type WinnersResponse struct {
 func (h *Handler) GetWinners(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
-	height, err := parseIntParam(query, "height")
+	height, err := parseIntParam(query, "height", true)
 	if err != nil {
 		sendError(w, http.StatusBadRequest, err)
 		return

@@ -6,7 +6,7 @@ import BetsComponent from "../components/Bets";
 const Bets: Component = () => {
 	return (
 		<Container>
-			<BetsComponent limit={50} hideTitleLink />
+			<BetsComponent limit={50} hideTitleLink showPagination />
 		</Container>
 	);
 };

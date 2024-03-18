@@ -11,9 +11,8 @@ import (
 // BetsStore contains the methods used to store and retrieve bets from the database.
 type BetsStore interface {
 	Add(bet Bet) error
-	GetPrizePool() (uint64, error)
-	List(offset, limit uint64, reverse bool) ([]Bet, error)
-	Reset() error
+	GetPrizePool(lotteryHeight uint32) (uint64, error)
+	List(lotteryHeight uint32, offset, limit uint64, reverse bool) ([]Bet, error)
 }
 
 // Bet represents a user bet.
@@ -44,19 +43,25 @@ func (b *bets) Add(bet Bet) error {
 	}
 	defer tx.Rollback()
 
-	highestIndex, err := getHighestIndex(tx)
+	height, err := getNextHeight(tx)
 	if err != nil {
 		return err
 	}
 
-	stmt, err := tx.Prepare("INSERT INTO bets (idx, tickets, public_key) VALUES (?,?,?)")
+	highestIndex, err := getHighestIndex(tx, height)
+	if err != nil {
+		return err
+	}
+
+	query := "INSERT INTO bets (idx, tickets, public_key, lottery_height) VALUES (?,?,?,?)"
+	stmt, err := tx.Prepare(query)
 	if err != nil {
 		return errors.Wrap(err, "preparing statement")
 	}
 	defer stmt.Close()
 
 	index := highestIndex + bet.Tickets
-	if _, err := stmt.Exec(index, bet.Tickets, bet.PublicKey); err != nil {
+	if _, err := stmt.Exec(index, bet.Tickets, bet.PublicKey, height); err != nil {
 		return errors.Wrap(err, "adding bet")
 	}
 
@@ -64,14 +69,14 @@ func (b *bets) Add(bet Bet) error {
 }
 
 // GetPrizePool returns the prize pool size.
-func (b *bets) GetPrizePool() (uint64, error) {
+func (b *bets) GetPrizePool(lotteryHeight uint32) (uint64, error) {
 	tx, err := b.db.Begin()
 	if err != nil {
 		return 0, errors.Wrap(err, "starting transaction")
 	}
 	defer tx.Rollback()
 
-	highestIndex, err := getHighestIndex(tx)
+	highestIndex, err := getHighestIndex(tx, lotteryHeight)
 	if err != nil {
 		return 0, err
 	}
@@ -82,15 +87,14 @@ func (b *bets) GetPrizePool() (uint64, error) {
 // List returns a list of bets.
 //
 // A limit value of 0 means there's no limit.
-func (b *bets) List(offset, limit uint64, reverse bool) ([]Bet, error) {
+func (b *bets) List(lotteryHeight uint32, offset, limit uint64, reverse bool) ([]Bet, error) {
 	// Cap limit to avoid creating a slice with too big capacity
-	if limit > 100 {
-		limit = 100
+	if limit > 500 {
+		limit = 500
 	}
 
-	query := "SELECT idx, tickets, public_key FROM bets"
-	clauses := AddPagination(offset, limit, "idx", reverse)
-	query += clauses
+	query := "SELECT idx, tickets, public_key FROM bets WHERE lottery_height=?"
+	query = AddPagination(query, offset, limit, "idx", reverse)
 
 	stmt, err := b.db.Prepare(query)
 	if err != nil {
@@ -98,7 +102,7 @@ func (b *bets) List(offset, limit uint64, reverse bool) ([]Bet, error) {
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.Query()
+	rows, err := stmt.Query(lotteryHeight)
 	if err != nil {
 		return nil, errors.Wrap(err, "listing bets")
 	}
@@ -118,30 +122,15 @@ func (b *bets) List(offset, limit uint64, reverse bool) ([]Bet, error) {
 	return bets, nil
 }
 
-// Reset removes all bets from the database.
-func (b *bets) Reset() error {
-	stmt, err := b.db.Prepare("DELETE FROM bets")
-	if err != nil {
-		return errors.Wrap(err, "preparing statement")
-	}
-	defer stmt.Close()
-
-	if _, err := stmt.Exec(); err != nil {
-		return errors.Wrap(err, "deleting all bets")
-	}
-
-	return nil
-}
-
-func getHighestIndex(tx *sql.Tx) (uint64, error) {
-	stmt, err := tx.Prepare("SELECT COALESCE(MAX(idx), 0) FROM bets")
+func getHighestIndex(tx *sql.Tx, lotteryHeight uint32) (uint64, error) {
+	stmt, err := tx.Prepare("SELECT COALESCE(MAX(idx), 0) FROM bets WHERE lottery_height=?")
 	if err != nil {
 		return 0, errors.Wrap(err, "preparing statement")
 	}
 	defer stmt.Close()
 
 	var index uint64
-	if err := stmt.QueryRow().Scan(&index); err != nil {
+	if err := stmt.QueryRow(lotteryHeight).Scan(&index); err != nil {
 		if err == sql.ErrNoRows {
 			return 0, nil
 		}

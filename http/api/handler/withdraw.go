@@ -42,7 +42,7 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fee, err := parseIntParam(query, "fee")
+	fee, err := parseIntParam(query, "fee", true)
 	if err != nil {
 		sendLNURLError(w, http.StatusBadRequest, err)
 		return

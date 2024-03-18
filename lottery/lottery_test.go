@@ -41,7 +41,7 @@ func TestStart(t *testing.T) {
 	}
 
 	betsMock := db.NewBetsStoreMock()
-	betsMock.On("List", uint64(0), uint64(0), false).Return([]db.Bet{}, nil)
+	betsMock.On("List", nextHeight, uint64(0), uint64(0), false).Return([]db.Bet{}, nil)
 
 	lotteryMock := db.NewLotteriesStoreMock()
 	lotteryMock.On("GetNextHeight").Return(nextHeight, nil)
@@ -130,12 +130,14 @@ func TestStartPastHeight(t *testing.T) {
 }
 
 func TestRaffle(t *testing.T) {
+	blockHeight := uint32(833348)
 	winnersCh := make(chan []db.Winner)
 	blocksCh := make(<-chan *chainrpc.BlockEpoch)
 	db := setupDB(t, func(db *sql.DB) {
-		_, err := db.Exec("INSERT INTO bets (idx, tickets, public_key) VALUES (?, ?, ?), (?, ?, ?)",
-			bets[0].Index, bets[0].Tickets, bets[0].PublicKey,
-			bets[1].Index, bets[1].Tickets, bets[1].PublicKey,
+		query := "INSERT INTO bets (idx, tickets, public_key, lottery_height) VALUES (?,?,?,?), (?,?,?,?)"
+		_, err := db.Exec(query,
+			bets[0].Index, bets[0].Tickets, bets[0].PublicKey, blockHeight,
+			bets[1].Index, bets[1].Tickets, bets[1].PublicKey, blockHeight,
 		)
 		assert.NoError(t, err)
 	})
@@ -144,7 +146,7 @@ func TestRaffle(t *testing.T) {
 	lottery, err := New(config.Lottery{}, db, nil, notifierMock, winnersCh, blocksCh)
 	assert.NoError(t, err)
 
-	prizePool, err := db.Bets.GetPrizePool()
+	prizePool, err := db.Bets.GetPrizePool(blockHeight)
 	assert.NoError(t, err)
 
 	t.Run("Winners were sent through the channel", func(t *testing.T) {
@@ -159,17 +161,17 @@ func TestRaffle(t *testing.T) {
 
 	block := &chainrpc.BlockEpoch{
 		Hash:   blockHash,
-		Height: 833348,
+		Height: blockHeight,
 	}
 
 	err = lottery.raffle(block)
 	assert.NoError(t, err)
 
-	t.Run("Bets were reset", func(t *testing.T) {
-		bets, err := db.Bets.List(0, 0, false)
+	t.Run("Bets weren't reset", func(t *testing.T) {
+		bets, err := db.Bets.List(blockHeight, 0, 0, false)
 		assert.NoError(t, err)
 
-		assert.Len(t, bets, 0)
+		assert.Len(t, bets, 2)
 	})
 
 	t.Run("Winners prizes were correctly assigned", func(t *testing.T) {
@@ -280,8 +282,8 @@ func TestGetInfo(t *testing.T) {
 
 	ctx := context.Background()
 	lndMock.On("RemoteBalance", ctx).Return(remoteBalance, nil)
-	betsMock.On("GetPrizePool").Return(prizePool, nil)
 	lotteriesMock.On("GetNextHeight").Return(nextHeight, nil)
+	betsMock.On("GetPrizePool", nextHeight).Return(prizePool, nil)
 
 	info, err := GetInfo(ctx, lndMock, db)
 	assert.NoError(t, err)

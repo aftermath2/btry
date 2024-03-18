@@ -41,6 +41,7 @@ func TestClose(t *testing.T) {
 func TestAddPagination(t *testing.T) {
 	cases := []struct {
 		desc          string
+		query         string
 		sortField     string
 		expectedQuery string
 		limit         uint64
@@ -49,19 +50,35 @@ func TestAddPagination(t *testing.T) {
 	}{
 		{
 			desc:          "All",
+			query:         "SELECT idx FROM bets",
 			offset:        4,
 			limit:         2,
 			sortField:     "idx",
 			reverse:       false,
-			expectedQuery: " WHERE idx >4 ORDER BY idx ASC LIMIT 2",
+			expectedQuery: "SELECT idx FROM bets WHERE idx >4 ORDER BY idx ASC LIMIT 2",
 		},
 		{
 			desc:          "All (reverse)",
+			query:         "SELECT idx FROM bets",
 			offset:        4,
 			limit:         2,
 			sortField:     "idx",
 			reverse:       true,
-			expectedQuery: " WHERE idx <4 ORDER BY idx DESC LIMIT 2",
+			expectedQuery: "SELECT idx FROM bets WHERE idx <4 ORDER BY idx DESC LIMIT 2",
+		},
+		{
+			desc:          "Query with WHERE",
+			query:         "SELECT idx FROM bets WHERE lottery_height=?",
+			offset:        4,
+			sortField:     "idx",
+			expectedQuery: "SELECT idx FROM bets WHERE lottery_height=? AND idx >4 ORDER BY idx ASC",
+		},
+		{
+			desc:          "Query without WHERE",
+			query:         "SELECT idx FROM bets",
+			offset:        4,
+			sortField:     "idx",
+			expectedQuery: "SELECT idx FROM bets WHERE idx >4 ORDER BY idx ASC",
 		},
 		{
 			desc:          "No limit",
@@ -100,7 +117,7 @@ func TestAddPagination(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			gotQuery := db.AddPagination(tc.offset, tc.limit, tc.sortField, tc.reverse)
+			gotQuery := db.AddPagination(tc.query, tc.offset, tc.limit, tc.sortField, tc.reverse)
 
 			assert.Equal(t, tc.expectedQuery, gotQuery)
 		})

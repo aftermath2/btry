@@ -35,10 +35,13 @@ func TestBetsSuite(t *testing.T) {
 
 func (b *BetsSuite) SetupTest() {
 	db := setupDB(b.T(), func(db *sql.DB) {
+		lotteriesQuery := `INSERT INTO lotteries (height) VALUES (?)`
+		_, err := db.Exec(lotteriesQuery, lotteryHeight)
+		b.NoError(err)
 		query := `DELETE FROM bets;
-		INSERT INTO bets (idx, public_key, tickets) VALUES (?, ?, ?), (?, ?, ?);`
-		_, err := db.Exec(query, firstBet.Index, firstBet.PublicKey, firstBet.Tickets,
-			secondBet.Index, secondBet.PublicKey, secondBet.Tickets)
+		INSERT INTO bets (idx, public_key, tickets, lottery_height) VALUES (?,?,?,?), (?,?,?,?);`
+		_, err = db.Exec(query, firstBet.Index, firstBet.PublicKey, firstBet.Tickets, lotteryHeight,
+			secondBet.Index, secondBet.PublicKey, secondBet.Tickets, lotteryHeight)
 		b.NoError(err)
 	})
 	b.db = db.Bets
@@ -52,7 +55,7 @@ func (b *BetsSuite) TestAdd() {
 	err := b.db.Add(bet)
 	b.NoError(err)
 
-	bets, err := b.db.List(0, 0, false)
+	bets, err := b.db.List(lotteryHeight, 0, 0, false)
 	b.NoError(err)
 
 	b.Len(bets, 3)
@@ -63,7 +66,7 @@ func (b *BetsSuite) TestAdd() {
 }
 
 func (b *BetsSuite) TestGetPrizePool() {
-	prizePool, err := b.db.GetPrizePool()
+	prizePool, err := b.db.GetPrizePool(lotteryHeight)
 	b.NoError(err)
 
 	expectedPrizePool := firstBet.Tickets + secondBet.Tickets
@@ -113,7 +116,7 @@ func (b *BetsSuite) TestList() {
 
 	for _, tc := range cases {
 		b.Run(tc.desc, func() {
-			bets, err := b.db.List(tc.offset, tc.limit, tc.reverse)
+			bets, err := b.db.List(lotteryHeight, tc.offset, tc.limit, tc.reverse)
 			b.NoError(err)
 
 			b.Equal(tc.expected, bets)
@@ -127,14 +130,4 @@ func (b *BetsSuite) TestList() {
 			b.True(ok)
 		})
 	}
-}
-
-func (b *BetsSuite) TestReset() {
-	err := b.db.Reset()
-	b.NoError(err)
-
-	bets, err := b.db.List(0, 0, false)
-	b.NoError(err)
-
-	b.Len(bets, 0)
 }

@@ -1,3 +1,8 @@
+.container {
+	display: flex;
+	flex-direction: column;
+}
+
 .height {
 	color: var(--light-grey);
 	text-align: center;

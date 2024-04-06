@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/aftermath2/BTRY/lottery"
+
 	"github.com/pkg/errors"
 )
 

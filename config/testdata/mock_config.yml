@@ -20,14 +20,11 @@ db:
     level: 0
 
 lightning:
-  network: regtest
   rpc_address: 127.0.0.1:10001
   logger:
     label: LND
     out_file: lnd.log
     level: 1
-  lightning_addresses: 
-    - username@service.domain
   tls_cert_path: ./testdata/tls.cert
   macaroon_path: ./testdata/readonly.macaroon
   max_fee_ppm: 500

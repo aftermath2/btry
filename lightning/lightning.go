@@ -4,6 +4,7 @@ package lightning
 import (
 	"context"
 	"encoding/hex"
+	"net/http"
 	"os"
 	"time"
 
@@ -39,6 +40,7 @@ type Client interface {
 	GetInfo(ctx context.Context) (*lnrpc.GetInfoResponse, error)
 	PayInvoice(ctx context.Context, invoice *lnrpc.PayReq, feeSat int64, inflightUpdates bool) (Stream[*lnrpc.Payment], error)
 	RemoteBalance(ctx context.Context) (int64, error)
+	SendToLightningAddress(ctx context.Context, address string, amountSat int64) (string, error)
 	SubscribeBlocks(ctx context.Context) (Stream[*chainrpc.BlockEpoch], error)
 	SubscribeChannelEvents(ctx context.Context) (Stream[*lnrpc.ChannelEventUpdate], error)
 	SubscribeInvoices(ctx context.Context) (Stream[*lnrpc.Invoice], error)
@@ -46,20 +48,22 @@ type Client interface {
 }
 
 type client struct {
-	ln     lnrpc.LightningClient
-	chain  chainrpc.ChainNotifierClient
-	router routerrpc.RouterClient
-	logger *logger.Logger
+	ln        lnrpc.LightningClient
+	chain     chainrpc.ChainNotifierClient
+	router    routerrpc.RouterClient
+	logger    *logger.Logger
+	torClient *http.Client
+	maxFeePPM int64
 }
 
 // NewClient returns a new client that communicates with a Lightning node.
-func NewClient(config config.Lightning) (Client, error) {
+func NewClient(config config.Lightning, torClient *http.Client) (Client, error) {
 	opts, err := loadGRPCOpts(config)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading grpc options")
 	}
 
-	conn, err := grpc.Dial(config.RPCAddress, opts...)
+	conn, err := grpc.NewClient(config.RPCAddress, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -70,10 +74,12 @@ func NewClient(config config.Lightning) (Client, error) {
 	}
 
 	return &client{
-		ln:     lnrpc.NewLightningClient(conn),
-		chain:  chainrpc.NewChainNotifierClient(conn),
-		router: routerrpc.NewRouterClient(conn),
-		logger: logger,
+		ln:        lnrpc.NewLightningClient(conn),
+		chain:     chainrpc.NewChainNotifierClient(conn),
+		router:    routerrpc.NewRouterClient(conn),
+		logger:    logger,
+		torClient: torClient,
+		maxFeePPM: config.MaxFeePPM,
 	}, nil
 }
 
@@ -163,6 +169,41 @@ func (c *client) PayInvoice(
 	return c.router.SendPaymentV2(ctx, req)
 }
 
+// PayInvoice attempts to route a payment to the final destination.
+func (c *client) PayInvoiceSync(
+	ctx context.Context,
+	invoice *lnrpc.PayReq,
+	feeSat int64,
+) (*lnrpc.SendResponse, error) {
+	if feeSat < 0 {
+		return nil, errors.New("invalid fee")
+	}
+
+	dest, err := hex.DecodeString(invoice.Destination)
+	if err != nil {
+		return nil, errors.Wrap(err, "decoding destination")
+	}
+
+	paymentHash, err := hex.DecodeString(invoice.PaymentHash)
+	if err != nil {
+		return nil, errors.Wrap(err, "decoding payment hash")
+	}
+
+	req := &lnrpc.SendRequest{
+		Amt: invoice.NumSatoshis,
+		FeeLimit: &lnrpc.FeeLimit{
+			Limit: &lnrpc.FeeLimit_Fixed{
+				Fixed: feeSat,
+			},
+		},
+		Dest:           dest,
+		PaymentHash:    paymentHash,
+		PaymentAddr:    invoice.PaymentAddr[:],
+		FinalCltvDelta: 80,
+	}
+	return c.ln.SendPaymentSync(ctx, req)
+}
+
 // RemoteBalance returns a report on the total remote funds across all open public channels.
 func (c *client) RemoteBalance(ctx context.Context) (int64, error) {
 	resp, err := c.ln.ListChannels(ctx, &lnrpc.ListChannelsRequest{
@@ -179,6 +220,41 @@ func (c *client) RemoteBalance(ctx context.Context) (int64, error) {
 	}
 
 	return remoteBalance, nil
+}
+
+// SendToLightningAddress uses the LNURL protocol to request invoices based on the address provided
+// and it pays them. It returns the payment preimage or an error if it fails.
+func (c *client) SendToLightningAddress(ctx context.Context, address string, amountSat int64) (string, error) {
+	callback, err := getPayCallback(c.torClient, address, amountSat)
+	if err != nil {
+		return "", err
+	}
+
+	invoice, err := getInvoice(c.torClient, callback)
+	if err != nil {
+		return "", err
+	}
+
+	payReq, err := c.DecodeInvoice(ctx, invoice)
+	if err != nil {
+		return "", err
+	}
+
+	if payReq.NumSatoshis != amountSat {
+		return "", errors.New("invalid invoice amount")
+	}
+
+	fee := amountSat * c.maxFeePPM / 1_000_000
+	resp, err := c.PayInvoiceSync(ctx, payReq, fee)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.PaymentError != "" {
+		return "", errors.New(resp.PaymentError)
+	}
+
+	return hex.EncodeToString(resp.PaymentPreimage), nil
 }
 
 // SubscribeBlocks creates a uni-directional stream from the server to the client in which

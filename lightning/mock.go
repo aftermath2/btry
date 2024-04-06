@@ -81,6 +81,17 @@ func (c *ClientMock) RemoteBalance(ctx context.Context) (int64, error) {
 	return remoteBalance, args.Error(1)
 }
 
+// SendToLightningAddress mock.
+func (c *ClientMock) SendToLightningAddress(ctx context.Context, address string, amountSat int64) (string, error) {
+	args := c.Called(ctx, address, amountSat)
+	var r0 string
+	v0 := args.Get(0)
+	if v0 != nil {
+		r0 = v0.(string)
+	}
+	return r0, args.Error(1)
+}
+
 // SubscribeBlocks mock.
 func (c *ClientMock) SubscribeBlocks(ctx context.Context) (Stream[*chainrpc.BlockEpoch], error) {
 	args := c.Called(ctx)

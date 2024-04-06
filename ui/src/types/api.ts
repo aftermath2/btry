@@ -43,6 +43,15 @@ export type GetHeightsResponse = {
 	readonly heights: number[]
 }
 
+export type GetLightningAddressResponse = {
+	readonly address: string
+	readonly has_address: boolean
+}
+
+export type SetLightningAddressResponse = {
+	readonly success: boolean
+}
+
 export type WithdrawResponse = {
 	readonly status: string
 	readonly payment_id: number

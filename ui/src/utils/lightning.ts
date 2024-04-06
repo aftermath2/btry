@@ -6,6 +6,7 @@ const errInvalidNetwork = Error(`network must be ${import.meta.env.VITE_NETWORK}
 const errExpiredInvoice = Error("already expired")
 const errInvalidAmount = Error("invalid amount")
 const errAmountTooHigh = Error("amount is higher than available prizes")
+const errInvalidAddress = Error("invalid address")
 
 export interface Invoice {
 	paymentHash: string
@@ -21,6 +22,29 @@ export interface Invoice {
 export const LNURLEncode = (url: string): string => {
 	const words = bech32.toWords(new TextEncoder().encode(url))
 	return bech32.encode("lnurl", words, 1023)
+}
+
+/**
+ * ValidateLightningAddress returns an error if the lightning address specified is not valid.
+ * 
+ * @param address lightning address
+ */
+export const ValidateLightningAddress = (address: string) => {
+	const parts = address.split("@")
+	if (parts.length != 2) {
+		throw errInvalidAddress
+	}
+
+	const name = parts[0]
+	const domain = parts[1]
+
+	if (name.length === 0 || domain.length === 0) {
+		throw errInvalidAddress
+	}
+
+	if (domain.lastIndexOf(".") === -1) {
+		throw errInvalidAddress
+	}
 }
 
 /**

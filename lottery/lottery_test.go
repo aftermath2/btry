@@ -281,12 +281,12 @@ func TestNotifyError(t *testing.T) {
 }
 
 func TestNotifyWinners(t *testing.T) {
+	blockHeight := uint32(1)
 	publicKey := "public_key"
 	chatID := int64(1)
 	prizes := uint64(100)
 	blocksDuration := uint32(144)
-	message := fmt.Sprintf(notification.Congratulations, prizes, blocksDuration*5)
-	t.Log(message)
+	message := fmt.Sprintf(notification.Congratulations, prizes, blockHeight+blocksDuration*5)
 
 	notificationsMock := db.NewNotificationsStoreMock()
 	notificationsMock.On("GetChatID", publicKey).Return(chatID, nil)
@@ -301,7 +301,7 @@ func TestNotifyWinners(t *testing.T) {
 	lottery, err := New(config, db, nil, notifierMock, nil, nil)
 	assert.NoError(t, err)
 
-	lottery.notifyWinners(map[string]uint64{publicKey: prizes})
+	lottery.notifyWinners(blockHeight, map[string]uint64{publicKey: prizes})
 }
 
 func TestTryAutoWithdrawals(t *testing.T) {

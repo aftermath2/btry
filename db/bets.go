@@ -131,7 +131,7 @@ func getHighestIndex(tx *sql.Tx, lotteryHeight uint32) (uint64, error) {
 
 	var index uint64
 	if err := stmt.QueryRow(lotteryHeight).Scan(&index); err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
 		return 0, errors.Wrap(err, "scanning highest index")

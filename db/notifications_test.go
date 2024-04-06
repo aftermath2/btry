@@ -27,8 +27,8 @@ func TestNotificationsSuite(t *testing.T) {
 func (n *NotificationsSuite) SetupTest() {
 	db := setupDB(n.T(), func(db *sql.DB) {
 		query := `DELETE FROM notifications;
-		INSERT INTO notifications (public_key, chat_id, service, created_at) VALUES (?, ?, ?, ?);`
-		_, err := db.Exec(query, notificationPublicKey, notificationChatID, "telegram", 1)
+		INSERT INTO notifications (public_key, chat_id, service) VALUES (?, ?, ?);`
+		_, err := db.Exec(query, notificationPublicKey, notificationChatID, "telegram")
 		n.NoError(err)
 	})
 	n.db = db.Notifications
@@ -49,12 +49,4 @@ func (n *NotificationsSuite) TestGetChatID() {
 	n.NoError(err)
 
 	n.Equal(notificationChatID, gotChatID)
-}
-
-func (n *NotificationsSuite) TestExpire() {
-	err := n.db.Expire()
-	n.NoError(err)
-
-	_, err = n.db.GetChatID(notificationPublicKey)
-	n.Error(err)
 }

@@ -30,9 +30,9 @@ type Notifier interface {
 }
 
 type notifier struct {
-	disabled bool
 	telegram *telegram
 	nostr    *nostrc
+	disabled bool
 }
 
 // NewNotifier returns a new notification sender.
@@ -47,7 +47,7 @@ func NewNotifier(config config.Notifier, db *db.DB, torClient *http.Client) (Not
 		return &notifier{disabled: config.Disabled}, nil
 	}
 
-	telegram, err := newTelegramNotifier(config, db, logger, torClient)
+	telegram, err := newTelegramNotifier(config.Telegram, db, logger, torClient)
 	if err != nil {
 		return nil, err
 	}

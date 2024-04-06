@@ -21,6 +21,7 @@ type nostrc struct {
 func newNostrNotifier(config config.Nostr) *nostrc {
 	return &nostrc{
 		privateKey: config.PrivateKey,
+		relays:     config.Relays,
 	}
 }
 
@@ -30,20 +31,20 @@ func (n *nostrc) PublishWinners(winners []db.Winner) error {
 		return errors.Wrap(err, "obtaining public key")
 	}
 
-	var message strings.Builder
-	message.WriteString("BTRY lottery winners\n---------------\n")
+	var msg strings.Builder
+	msg.WriteString("BTRY lottery winners\n---------------\n")
 	for i, winner := range winners {
 		if i != 0 {
-			message.WriteByte('\n')
+			msg.WriteByte('\n')
 		}
 
-		message.WriteString("Ticket ")
-		message.WriteString(strconv.FormatUint(winner.Ticket, 10))
-		message.WriteString(" from ")
-		message.WriteString(winner.PublicKey)
-		message.WriteString(" won ")
-		message.WriteString(strconv.FormatUint(winner.Prize, 10))
-		message.WriteString(" sats")
+		msg.WriteString("Ticket ")
+		msg.WriteString(strconv.FormatUint(winner.Ticket, 10))
+		msg.WriteString(" from ")
+		msg.WriteString(winner.PublicKey)
+		msg.WriteString(" won ")
+		msg.WriteString(strconv.FormatUint(winner.Prize, 10))
+		msg.WriteString(" sats")
 	}
 
 	event := nostr.Event{
@@ -51,7 +52,7 @@ func (n *nostrc) PublishWinners(winners []db.Winner) error {
 		CreatedAt: nostr.Now(),
 		Kind:      nostr.KindTextNote,
 		Tags:      nil,
-		Content:   message.String(),
+		Content:   msg.String(),
 	}
 
 	if err := event.Sign(n.privateKey); err != nil {

@@ -23,6 +23,7 @@ type HandlerSuite struct {
 	rec               *httptest.ResponseRecorder
 	req               *http.Request
 	betsMock          *db.BetsStoreMock
+	lightningMock     *db.LightningStoreMock
 	lotteriesMock     *db.LotteriesStoreMock
 	prizesMock        *db.PrizesStoreMock
 	winnersMock       *db.WinnersStoreMock
@@ -39,6 +40,7 @@ func (h *HandlerSuite) SetupTest() {
 	h.rec = httptest.NewRecorder()
 	h.req = httptest.NewRequest(http.MethodGet, "/", nil)
 	h.betsMock = db.NewBetsStoreMock()
+	h.lightningMock = db.NewLightningStoreMock()
 	h.lotteriesMock = db.NewLotteriesStoreMock()
 	h.prizesMock = db.NewPrizesStoreMock()
 	h.winnersMock = db.NewWinnersStoreMock()
@@ -46,6 +48,7 @@ func (h *HandlerSuite) SetupTest() {
 	h.eventStreamerMock = sse.NewStreamerMock()
 	db := &db.DB{
 		Bets:      h.betsMock,
+		Lightning: h.lightningMock,
 		Lotteries: h.lotteriesMock,
 		Prizes:    h.prizesMock,
 		Winners:   h.winnersMock,
@@ -145,6 +148,24 @@ func (h *HandlerSuite) TestGetBetsInvalidParameters() {
 			h.Equal(http.StatusBadRequest, h.rec.Code)
 		})
 	}
+}
+
+func (h *HandlerSuite) TestGetBetsNoHeightError() {
+	h.req = httptest.NewRequest(http.MethodPost, "/bets", nil)
+
+	h.handler.GetBets(h.rec, h.req)
+
+	h.Equal(http.StatusBadRequest, h.rec.Code)
+}
+
+func (h *HandlerSuite) TestGetBetsInvalidHeightError() {
+	url := url.Values{}
+	url.Add("height", "one")
+	h.req = httptest.NewRequest(http.MethodPost, "/bets?"+url.Encode(), nil)
+
+	h.handler.GetBets(h.rec, h.req)
+
+	h.Equal(http.StatusBadRequest, h.rec.Code)
 }
 
 func (h *HandlerSuite) TestGetBetsInternalError() {

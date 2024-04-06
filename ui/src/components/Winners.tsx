@@ -1,5 +1,5 @@
 import { Component } from "solid-js";
-import { SetStoreFunction } from "solid-js/store";
+import { SetStoreFunction, Store } from "solid-js/store";
 import { useI18n } from "@solid-primitives/i18n";
 import toast from 'solid-toast';
 
@@ -27,17 +27,9 @@ const Winners: Component<Props> = (props) => {
 		return resp.winners
 	}
 
-	const subscribeInfo = (
-		setWinners: SetStoreFunction<any>,
-		heights: any,
-		setHeights: SetStoreFunction<number[]>
-	): void => {
+	const subscribeInfo = (_: Store<any>, setWinners: SetStoreFunction<any>): void => {
 		api.Subscribe("info", (payload) => {
 			if (payload.winners !== undefined) {
-				if (payload.next_height !== undefined) {
-					setHeights(heights.length, payload.next_height)
-				}
-
 				setWinners(payload.winners)
 
 				let prizes = 0

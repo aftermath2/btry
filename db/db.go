@@ -15,11 +15,12 @@ import (
 // DB represents the application database.
 type DB struct {
 	db            *sql.DB
-	Notifications NotificationsStore
 	Bets          BetsStore
+	Lightning     LightningStore
+	Lotteries     LotteriesStore
+	Notifications NotificationsStore
 	Prizes        PrizesStore
 	Winners       WinnersStore
-	Lotteries     LotteriesStore
 }
 
 // Open opens the database.
@@ -47,10 +48,11 @@ func Open(config config.DB) (*DB, error) {
 	return &DB{
 		db:            db,
 		Bets:          newBetsStore(db, logger),
-		Prizes:        newPrizesStore(db, logger),
-		Notifications: newNotificationsStore(db, logger),
-		Winners:       newWinnersStore(db, logger),
+		Lightning:     newLightningStore(db, logger),
 		Lotteries:     newLotteriesStore(db, logger),
+		Notifications: newNotificationsStore(db, logger),
+		Prizes:        newPrizesStore(db, logger),
+		Winners:       newWinnersStore(db, logger),
 	}, nil
 }
 
@@ -152,10 +154,15 @@ CREATE TABLE IF NOT EXISTS prizes (
 CREATE TABLE IF NOT EXISTS notifications (
 	public_key VARCHAR(64) PRIMARY KEY,
 	chat_id INTEGER NOT NULL,
-	service TEXT NOT NULL CHECK (service IN ('telegram')),
-	created_at INTEGER DEFAULT (unixepoch())
+	service TEXT NOT NULL CHECK (service IN ('telegram'))
 ) WITHOUT ROWID;
 
 CREATE TABLE IF NOT EXISTS lotteries (
 	height INTEGER PRIMARY KEY CHECK (height > 0)
+);
+
+CREATE TABLE IF NOT EXISTS lightning (
+	public_key VARCHAR(64) NOT NULL,
+	address VARCHAR(255) NOT NULL,
+	PRIMARY KEY (public_key, address)
 );`

@@ -77,7 +77,7 @@ func (p *prizes) Get(publicKey string) (uint64, error) {
 
 	var prizes uint64
 	if err := stmt.QueryRow(publicKey).Scan(&prizes); err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
 		return 0, errors.Wrap(err, "scanning prizes")

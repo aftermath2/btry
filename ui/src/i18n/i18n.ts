@@ -42,6 +42,7 @@ export const dict = {
 		enable_notifications: "Enable {{ service }} notifications",
 		required: "Required",
 		target_block_height: "Target block height",
+		set: "Set",
 	},
 	de: {
 		bet: "Wetten",
@@ -84,6 +85,7 @@ export const dict = {
 		enable_notifications: "Aktivieren sie {{ service }} benachrichtigungen",
 		required: "Erforderlich",
 		target_block_height: "Zielblockhöhe",
+		set: "Satz",
 	},
 	es: {
 		bet: "Apostar",
@@ -126,6 +128,7 @@ export const dict = {
 		enable_notifications: "Hablitar notificaciones de {{ service }}",
 		required: "Requerida",
 		target_block_height: "Altura del bloque objetivo",
+		set: "Colocar",
 	},
 	fr: {
 		bet: "Pari",
@@ -168,6 +171,7 @@ export const dict = {
 		enable_notifications: "Activer les notifications des {{ service }}",
 		required: "Requis",
 		target_block_height: "Hauteur du bloc cible",
+		set: "Ensemble",
 	},
 	it: {
 		bet: "Scommettere",
@@ -210,6 +214,7 @@ export const dict = {
 		enable_notifications: "Abilita notifiche di {{ service }}",
 		required: "Necessaria",
 		target_block_height: "Altezza del blocco target",
+		set: "Imposta",
 	},
 	pr: {
 		bet: "Aposta",
@@ -252,6 +257,7 @@ export const dict = {
 		enable_notifications: "Ativar notificações de {{ service }}",
 		required: "Obrigatória",
 		target_block_height: "Altura do bloco alvo",
+		set: "Definir",
 	},
 	jp: {
 		bet: "賭ける",
@@ -294,6 +300,7 @@ export const dict = {
 		enable_notifications: "{{ service }} 通知を有効にします",
 		required: "必須",
 		target_block_height: "ターゲットブロックの高さ",
+		set: "セット",
 	},
 	ch: { /* Traditional */
 		bet: "打賭",
@@ -336,6 +343,7 @@ export const dict = {
 		enable_notifications: "启用 {{ service }} 通知",
 		required: "必需的",
 		target_block_height: "目標塊高度",
+		set: "放",
 	},
 	ru: {
 		bet: "Ставка",
@@ -378,6 +386,7 @@ export const dict = {
 		enable_notifications: "Включить {{ service }} уведомления",
 		required: "Необходимый",
 		target_block_height: "Целевой блок высота",
+		set: "Установить",
 	}
 };
 

@@ -17,7 +17,7 @@ func (h *HandlerSuite) TestLNURLWithdraw() {
 	url := url.Values{}
 	url.Add("pubkey", validPublicKey)
 	url.Add("signature", validSignature)
-	h.req = httptest.NewRequest(http.MethodPost, "/lnurl/withdraw?"+url.Encode(), nil)
+	h.req = httptest.NewRequest(http.MethodGet, "/lightning/lnurlw?"+url.Encode(), nil)
 
 	prizes := uint64(2_000_000)
 	h.prizesMock.On("Get", validPublicKey).Return(prizes, nil)
@@ -50,7 +50,7 @@ func (h *HandlerSuite) TestLNURLWithdrawNoPrizes() {
 	url := url.Values{}
 	url.Add("pubkey", validPublicKey)
 	url.Add("signature", validSignature)
-	h.req = httptest.NewRequest(http.MethodPost, "/lnurl/withdraw?"+url.Encode(), nil)
+	h.req = httptest.NewRequest(http.MethodGet, "/lightning/lnurlw?"+url.Encode(), nil)
 
 	prizes := uint64(0)
 	h.prizesMock.On("Get", validPublicKey).Return(prizes, nil)
@@ -107,7 +107,7 @@ func (h *HandlerSuite) TestLNURLWithdrawInvaliAuth() {
 			url := url.Values{}
 			url.Add("pubkey", tc.publicKey)
 			url.Add("signature", tc.signature)
-			h.req = httptest.NewRequest(http.MethodPost, "/lnurl/withdraw?"+url.Encode(), nil)
+			h.req = httptest.NewRequest(http.MethodGet, "/lightning/lnurlw?"+url.Encode(), nil)
 
 			h.handler.LNURLWithdraw(h.rec, h.req)
 
@@ -120,7 +120,7 @@ func (h *HandlerSuite) TestLNURLWithdrawInternalError() {
 	url := url.Values{}
 	url.Add("pubkey", validPublicKey)
 	url.Add("signature", validSignature)
-	h.req = httptest.NewRequest(http.MethodPost, "/lnurl/withdraw?"+url.Encode(), nil)
+	h.req = httptest.NewRequest(http.MethodGet, "/lightning/lnurlw?"+url.Encode(), nil)
 	h.SetAuthorizationKey(validPublicKey)
 
 	expectedErr := errors.New("test err")

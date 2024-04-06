@@ -26,7 +26,7 @@ const Bets: Component<Props> = (props) => {
 		return resp.bets
 	}
 
-	const subscribeInvoices = (bets: any, setBets: SetStoreFunction<any>,): void => {
+	const subscribeInvoices = (bets: any, setBets: SetStoreFunction<any>): void => {
 		api.Subscribe("invoices", (payload) => {
 			if (payload.status !== Status.Success) {
 				return

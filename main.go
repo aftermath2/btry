@@ -26,7 +26,12 @@ func main() {
 
 	ctx := context.Background()
 
-	lnd, err := lightning.NewClient(config.Lightning)
+	torClient, err := tor.NewClient(config.Tor)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	lnd, err := lightning.NewClient(config.Lightning, torClient)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,11 +44,6 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
-
-	torClient, err := tor.NewClient(config.Tor)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	notifier, err := notification.NewNotifier(config.Notifier, db, torClient)
 	if err != nil {

@@ -33,6 +33,7 @@ lightning:
     level: 1
   tls_cert_path: path/to/tls_cert
   macaroon_path: path/to/macaroon_path
+  max_fee_ppm: 500
 
 lottery:
   duration: 144
@@ -42,7 +43,7 @@ lottery:
     level: 2
 
 notifier:
-  disable: false
+  disabled: false
   logger:
     label: Notifier
     out_file: logs/notifier.log

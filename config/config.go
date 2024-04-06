@@ -47,6 +47,7 @@ type Lightning struct {
 	TLSCertPath  string `yaml:"tls_cert_path"`
 	MacaroonPath string `yaml:"macaroon_path"`
 	Logger       Logger `yaml:"logger"`
+	MaxFeePPM    int64  `yaml:"max_fee_ppm"`
 }
 
 // Logger configuration.
@@ -64,9 +65,9 @@ type Lottery struct {
 
 // Notifier configuration.
 type Notifier struct {
-	Disable  bool     `yaml:"disable"`
 	Telegram Telegram `yaml:"telegram"`
 	Logger   Logger   `yaml:"logger"`
+	Disabled bool     `yaml:"disabled"`
 }
 
 // RateLimiter configuration.

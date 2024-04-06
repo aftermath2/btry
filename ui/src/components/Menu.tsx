@@ -1,8 +1,9 @@
-import { Component, Show, createSignal } from "solid-js";
+import { Component, Show, createSignal, onMount } from "solid-js";
 import { useI18n } from "@solid-primitives/i18n";
 
 import styles from "./Menu.module.css";
 import copyIcon from "../assets/icons/copy.svg"
+import { useAPIContext } from "../context/APIContext";
 import { useAuthContext } from "../context/AuthContext";
 import { Hash, HexEncode, HexRegex } from "../utils/utils";
 import { HandleError, WriteClipboard } from "../utils/actions";
@@ -12,6 +13,7 @@ import { NicknameFromKey } from "../utils/nickname/nickname";
 import Modal from "./Modal";
 import Input from "./Input";
 import QRCode from "../components/QRCode";
+import { ValidateLightningAddress } from "../utils/lightning";
 
 const errInvalidLength = new Error("The private key must be longer than 12 characters")
 
@@ -20,16 +22,21 @@ interface Props {
 }
 
 const Menu: Component<Props> = (props) => {
+	const api = useAPIContext()
 	const [auth, setAuth] = useAuthContext()
 	const [t] = useI18n()
+
 	const telegramResolve = `tg://resolve?domain=${import.meta.env.VITE_TELEGRAM_BOT_USERNAME}&start=${auth().publicKey}`
 	const telegramURL = `https://t.me/${import.meta.env.VITE_TELEGRAM_BOT_USERNAME}?start=${auth().publicKey}`
 
+	const [privateKey, setPrivateKey] = createSignal("")
+	const [lightningAddress, setLightningAddress] = createSignal("")
 	const [showRestoreModal, setShowRestoreModal] = createSignal(false)
 	const [showTelegramModal, setShowTelegramModal] = createSignal(false)
-	const [privateKey, setPrivateKey] = createSignal("")
+	const [showLightningAddressModal, setShowLightningAddressModal] = createSignal(false)
 
 	const createKeyPair = async () => {
+		setLightningAddress("")
 		const [privateKey, publicKey] = await GenerateKeyPair()
 		const nickname = await NicknameFromKey(publicKey)
 		setAuth({
@@ -39,7 +46,7 @@ const Menu: Component<Props> = (props) => {
 		})
 	}
 
-	const onSubmit = async () => {
+	const onPrivateKeySubmit = async () => {
 		let privKey = privateKey()
 		if (privKey.length < 12) {
 			throw errInvalidLength
@@ -68,6 +75,22 @@ const Menu: Component<Props> = (props) => {
 
 		setShowRestoreModal(false)
 		setPrivateKey("")
+		setLightningAddress("")
+	}
+
+	const onLightningAddressClick = async () => {
+		const resp = await api.GetLightningAddress()
+		if (resp.has_address) {
+			setLightningAddress(resp.address)
+		}
+
+		setShowLightningAddressModal(true)
+	}
+
+	const onLightningAddressSubmit = async () => {
+		ValidateLightningAddress(lightningAddress())
+		await api.SetLightningAddress(lightningAddress())
+		setShowLightningAddressModal(false)
 	}
 
 	return (
@@ -99,6 +122,11 @@ const Menu: Component<Props> = (props) => {
 						textFontSize="14px"
 						onClick={() => setShowTelegramModal(true)}
 					/>
+					<Button
+						text={`${t("set")} lightning address`}
+						textFontSize="14px"
+						onClick={onLightningAddressClick}
+					/>
 				</div>
 			</div>
 
@@ -108,9 +136,9 @@ const Menu: Component<Props> = (props) => {
 					value={privateKey()}
 					handleInput={(e) => setPrivateKey(e.currentTarget.value)}
 					focus
-					onEnter={HandleError(() => onSubmit())}
+					onEnter={HandleError(() => onPrivateKeySubmit())}
 				/>
-				<Button text="Submit" onClick={HandleError(() => onSubmit())} />
+				<Button text="Submit" onClick={HandleError(() => onPrivateKeySubmit())} />
 			</Modal>
 
 			<Modal
@@ -130,6 +158,17 @@ const Menu: Component<Props> = (props) => {
 						/>
 					</button>
 				</div>
+			</Modal>
+
+			<Modal show={showLightningAddressModal()} onClose={() => setShowLightningAddressModal(false)}>
+				<Input
+					title="Lightning address"
+					value={lightningAddress()}
+					handleInput={(e) => setLightningAddress(e.currentTarget.value)}
+					focus
+					onEnter={HandleError(() => onLightningAddressSubmit())}
+				/>
+				<Button text="Submit" onClick={HandleError(() => onLightningAddressSubmit())} />
 			</Modal>
 		</Show>
 	);

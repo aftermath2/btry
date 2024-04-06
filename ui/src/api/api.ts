@@ -1,7 +1,7 @@
 import {
 	GetBetsResponse, GetInfoResponse, GetInvoiceResponse,
 	GetPrizesResponse, GetWinnersResponse, LNURLWithdrawResponse,
-	GetHeightsResponse, WithdrawResponse
+	GetHeightsResponse, WithdrawResponse, SetLightningAddressResponse, GetLightningAddressResponse
 } from "../types/api";
 import { HTTP } from "./http";
 import { Events, SSE } from "./sse";
@@ -9,7 +9,7 @@ import { Events, SSE } from "./sse";
 const API_URL = `${import.meta.env.VITE_API_URL}/api`
 
 export const getLNURLWithdrawURL = (publicKey: string, signature: string): string => {
-	return `${API_URL}/lnurl/withdraw?pubkey=${publicKey}&signature=${signature}`
+	return `${API_URL}/lightning/lnurlw?pubkey=${publicKey}&signature=${signature}`
 }
 
 export class API {
@@ -57,17 +57,25 @@ export class API {
 		})
 	}
 
-	async GetLottery(): Promise<GetInfoResponse> {
-		return await HTTP.get<GetInfoResponse>({
-			url: `${API_URL}/lottery`,
+	async GetInvoice(amount: number): Promise<GetInvoiceResponse> {
+		return await HTTP.get<GetInvoiceResponse>({
+			url: `${API_URL}/invoice?amount=${amount}`,
 			keepalive: true,
 			signal: this.abortController.signal
 		})
 	}
 
-	async GetInvoice(amount: number): Promise<GetInvoiceResponse> {
-		return await HTTP.get<GetInvoiceResponse>({
-			url: `${API_URL}/invoice?amount=${amount}`,
+	async GetLightningAddress(): Promise<GetLightningAddressResponse> {
+		return await HTTP.get<GetLightningAddressResponse>({
+			url: `${API_URL}/lightning/address`,
+			keepalive: true,
+			signal: this.abortController.signal
+		})
+	}
+
+	async GetLottery(): Promise<GetInfoResponse> {
+		return await HTTP.get<GetInfoResponse>({
+			url: `${API_URL}/lottery`,
 			keepalive: true,
 			signal: this.abortController.signal
 		})
@@ -92,6 +100,14 @@ export class API {
 	async LNURLWithdraw(publicKey: string, signature: string): Promise<LNURLWithdrawResponse> {
 		return await HTTP.get<LNURLWithdrawResponse>({
 			url: getLNURLWithdrawURL(publicKey, signature),
+			keepalive: true,
+			signal: this.abortController.signal
+		})
+	}
+
+	async SetLightningAddress(address: string): Promise<SetLightningAddressResponse> {
+		return await HTTP.post<SetLightningAddressResponse>({
+			url: `${API_URL}/lightning/address?address=${address}`,
 			keepalive: true,
 			signal: this.abortController.signal
 		})

@@ -15,10 +15,7 @@ interface Props {
 	itemsName: "bets" | "winners"
 	tableHeaders: string[]
 	getItems: (height: number) => Promise<any[]>
-	subscribe: (
-		items: Store<any>, setItems: SetStoreFunction<any>,
-		heights: Store<any>, setHeights: SetStoreFunction<number[]>,
-	) => void
+	subscribe: (items: Store<any>, setItems: SetStoreFunction<any>) => void
 	showPagination?: boolean
 	hideTitleLink?: boolean
 	reset?: boolean
@@ -44,6 +41,10 @@ const List: Component<Props> = (props) => {
 		let i = next ? index() + 1 : index() - 1
 		setIndex(i)
 		const items = await props.getItems(heights[index()])
+		if (items === undefined) {
+			setItems([])
+			return
+		}
 		setItems(items)
 	}
 
@@ -68,7 +69,7 @@ const List: Component<Props> = (props) => {
 			return
 		}
 
-		props.subscribe(items, setItems, heights, setHeigths)
+		props.subscribe(items, setItems)
 	})
 
 	onCleanup(() => {

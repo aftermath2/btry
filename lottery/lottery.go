@@ -3,7 +3,6 @@ package lottery
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"math"
 	"math/big"
@@ -139,6 +138,13 @@ func (l *Lottery) Start() error {
 }
 
 func (l *Lottery) raffle(block *chainrpc.BlockEpoch) error {
+	// Expire prizes assigned blocksDuration*5 or more blocks ago
+	expiredPrizes, err := l.db.Prizes.Expire(block.Height - (l.blocksDuration * 5))
+	if err != nil {
+		return err
+	}
+	l.logger.Infof("Expired prizes: %d", expiredPrizes)
+
 	bets, err := l.db.Bets.List(block.Height, 0, 0, false)
 	if err != nil {
 		return errors.Wrap(err, "listing bets")
@@ -153,7 +159,7 @@ func (l *Lottery) raffle(block *chainrpc.BlockEpoch) error {
 		return err
 	}
 
-	winners, err := l.getWinners(block.Hash, prizePool, bets)
+	winners, err := getWinners(block.Hash, prizePool, bets)
 	if err != nil {
 		return errors.Wrap(err, "getting winners")
 	}
@@ -167,26 +173,116 @@ func (l *Lottery) raffle(block *chainrpc.BlockEpoch) error {
 	}
 
 	l.winnersCh <- winners
-	l.notifyWinners(winners)
 
-	// Expire prizes assigned 720 or more blocks ago
-	expiredPrizes, err := l.db.Prizes.Expire(block.Height - (l.blocksDuration * 5))
-	if err != nil {
-		return err
-	}
-	l.logger.Infof("Expired prizes: %d", expiredPrizes)
-
-	if err := l.db.Notifications.Expire(); err != nil {
-		return err
-	}
+	winnersMap := aggregateWinners(winners)
+	l.notifyWinners(winnersMap)
+	l.tryAutoWithdrawals(block.Height, winnersMap)
 
 	return nil
+}
+
+func (l *Lottery) notify(publicKey, message string) {
+	chatID, err := l.db.Notifications.GetChatID(publicKey)
+	if err != nil {
+		if !errors.Is(err, db.ErrNoChatID) {
+			l.logger.Error(errors.Wrap(err, "getting telegram chat ID"))
+		}
+		return
+	}
+
+	l.notifier.Notify(chatID, message)
+}
+
+// notifyWinners sends a notification with a congratulations message to the winners if they have
+// enabled the notifications.
+func (l *Lottery) notifyWinners(winnersMap map[string]uint64) {
+	for publicKey, prizes := range winnersMap {
+		message := fmt.Sprintf(notification.Congratulations, prizes, l.blocksDuration*5)
+		l.notify(publicKey, message)
+	}
+}
+
+// tryAutoWithdrawals attempts to send winners their prizes via lightning addresses.
+func (l *Lottery) tryAutoWithdrawals(lotteryHeight uint32, winnersMap map[string]uint64) {
+	ctx := context.Background()
+
+	for publicKey, prizes := range winnersMap {
+		address, err := l.db.Lightning.GetAddress(publicKey)
+		if err != nil {
+			if !errors.Is(err, db.ErrNoAddress) {
+				l.logger.Error(err)
+			}
+			continue
+		}
+
+		if err := l.db.Prizes.Withdraw(publicKey, prizes); err != nil {
+			l.logger.Error(err)
+			continue
+		}
+
+		preimage, err := l.lnd.SendToLightningAddress(ctx, address, int64(prizes))
+		if err != nil {
+			l.logger.Error(errors.Wrap(err, "sending to lightning address"))
+
+			winner := db.Winner{
+				PublicKey: publicKey,
+				Prize:     prizes,
+			}
+			if err := l.db.Prizes.Set(lotteryHeight, []db.Winner{winner}); err != nil {
+				l.logger.Error(err)
+			}
+			continue
+		}
+
+		message := fmt.Sprintf(notification.AutomaticWithdrawal, prizes, address, preimage)
+		l.notify(publicKey, message)
+	}
+}
+
+// GetInfo returns information about the lottery.
+func GetInfo(ctx context.Context, lnd lightning.Client, db *db.DB) (Info, error) {
+	remoteBalance, err := lnd.RemoteBalance(ctx)
+	if err != nil {
+		return Info{}, err
+	}
+
+	nextHeight, err := db.Lotteries.GetNextHeight()
+	if err != nil {
+		return Info{}, err
+	}
+
+	prizePool, err := db.Bets.GetPrizePool(nextHeight)
+	if err != nil {
+		return Info{}, err
+	}
+
+	return Info{
+		PrizePool:  int64(prizePool),
+		Capacity:   remoteBalance / CapacityDivisor,
+		NextHeight: nextHeight,
+	}, nil
+}
+
+// aggregateWinners returns a map with the winners and their prizes aggregated.
+func aggregateWinners(winners []db.Winner) map[string]uint64 {
+	winnersMap := make(map[string]uint64)
+
+	for _, winner := range winners {
+		prizes, ok := winnersMap[winner.PublicKey]
+		if ok {
+			winnersMap[winner.PublicKey] = prizes + winner.Prize
+		} else {
+			winnersMap[winner.PublicKey] = winner.Prize
+		}
+	}
+
+	return winnersMap
 }
 
 // getWinners looks for the target or the closest higher number using the binary search algorithm.
 //
 // The bets slice must be sorted.
-func (l *Lottery) getWinners(blockHash []byte, prizePool uint64, bets []db.Bet) ([]db.Winner, error) {
+func getWinners(blockHash []byte, prizePool uint64, bets []db.Bet) ([]db.Winner, error) {
 	if len(bets) <= 0 {
 		return nil, nil
 	}
@@ -246,57 +342,4 @@ func getPublicKey(bets []db.Bet, winningTicket uint64) string {
 
 	// The left ends up being the higher value of the two, hence that user has the winning ticket
 	return bets[left].PublicKey
-}
-
-// notifyWinners sends a notification with a congratulations message to the winners if they have
-// enabled the notifications.
-func (l *Lottery) notifyWinners(winners []db.Winner) {
-	winnersMap := make(map[string]uint64, len(prizes))
-
-	// Aggregate prizes to avoid sending multiple notifications to the same winner
-	for _, winner := range winners {
-		prizes, ok := winnersMap[winner.PublicKey]
-		if ok {
-			winnersMap[winner.PublicKey] = prizes + winner.Prize
-		} else {
-			winnersMap[winner.PublicKey] = winner.Prize
-		}
-	}
-
-	for publicKey, prizes := range winnersMap {
-		chatID, err := l.db.Notifications.GetChatID(publicKey)
-		if err != nil {
-			if !errors.Is(err, sql.ErrNoRows) {
-				l.logger.Error(errors.Wrap(err, "getting telegram chat ID"))
-			}
-			continue
-		}
-
-		message := fmt.Sprintf(notification.Congratulations, prizes)
-		l.notifier.Notify(chatID, message)
-	}
-}
-
-// GetInfo returns information about the lottery.
-func GetInfo(ctx context.Context, lnd lightning.Client, db *db.DB) (Info, error) {
-	remoteBalance, err := lnd.RemoteBalance(ctx)
-	if err != nil {
-		return Info{}, err
-	}
-
-	nextHeight, err := db.Lotteries.GetNextHeight()
-	if err != nil {
-		return Info{}, err
-	}
-
-	prizePool, err := db.Bets.GetPrizePool(nextHeight)
-	if err != nil {
-		return Info{}, err
-	}
-
-	return Info{
-		PrizePool:  int64(prizePool),
-		Capacity:   remoteBalance / CapacityDivisor,
-		NextHeight: nextHeight,
-	}, nil
 }

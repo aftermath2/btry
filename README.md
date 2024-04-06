@@ -62,9 +62,11 @@ Prizes distribution as a percentage of the prize pool:
 |  |  |
 | BTRY fee | 0.390625 |
 
-Prizes expire after **5 days**, so make sure to withdraw them within this window. This is to avoid having liquidity locked for long periods of time, which would disable the ability of receiving more bets. There is an issue about [Automatic withdrawals via lightning addresses](https://github.com/aftermath2/btry/issues/11) that may help to overcome this limitation.
+Prizes expire after **720 blocks**, so make sure to withdraw them within this window. This is to avoid having liquidity locked for long periods of time, which would disable the ability of receiving more bets.
 
-> Users can opt to receive notifications through telegram in case of winning. Messaging services identifiers are stored for one week and permanently deleted after that.
+If you would like the prizes to be sent to you automatically, consider linking a lightning address to your private key and BTRY will attempt to pay the winners after they are known. Please note that this may degrade your privacy.
+
+> Users can also opt to receive notifications through telegram in case of winning.
 
 ### Authentication
 

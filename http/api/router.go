@@ -12,9 +12,9 @@ import (
 	"github.com/aftermath2/BTRY/http/api/sse"
 	"github.com/aftermath2/BTRY/lightning"
 	"github.com/aftermath2/BTRY/ui"
-	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
 )
 
 // Router implements http.Handler and io.Closer interfaces.
@@ -76,7 +76,9 @@ func NewRouter(
 		r.Handle("/events", eventStreamer)
 		r.Get("/lottery", handler.GetLottery)
 		r.Get("/invoice", handler.GetInvoice)
-		r.Get("/lnurl/withdraw", handler.LNURLWithdraw)
+		r.Get("/lightning/address", handler.GetLightningAddress)
+		r.Post("/lightning/address", handler.SetLightningAddress)
+		r.Get("/lightning/lnurlw", handler.LNURLWithdraw)
 		r.Get("/prizes", handler.GetPrizes)
 		r.Get("/winners", handler.GetWinners)
 		r.Post("/withdraw", handler.Withdraw)

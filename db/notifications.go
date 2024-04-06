@@ -2,21 +2,18 @@ package db
 
 import (
 	"database/sql"
-	"time"
 
 	"github.com/aftermath2/BTRY/logger"
 
 	"github.com/pkg/errors"
 )
 
-// NotificationExpiry is the duration for which public keys and chat IDs are associated
-const NotificationExpiry = time.Hour * 24 * 7
+var ErrNoChatID = errors.New("no chat ID linked to this public key")
 
 // NotificationsStore contains the methods used to store and retrieve notifications from the database.
 type NotificationsStore interface {
 	Add(publicKey string, chatID int64) error
 	GetChatID(publicKey string) (int64, error)
-	Expire() error
 }
 
 type notifications struct {
@@ -58,24 +55,11 @@ func (n *notifications) GetChatID(publicKey string) (int64, error) {
 
 	var chatID int64
 	if err := stmt.QueryRow(publicKey).Scan(&chatID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, ErrNoChatID
+		}
 		return 0, errors.Wrap(err, "scanning notification chat ID")
 	}
 
 	return chatID, nil
-}
-
-// Expire deletes expired notifications.
-func (n *notifications) Expire() error {
-	stmt, err := n.db.Prepare("DELETE FROM notifications WHERE created_at < ?")
-	if err != nil {
-		return errors.Wrap(err, "preparing statement")
-	}
-	defer stmt.Close()
-
-	t := time.Now().Add(-NotificationExpiry).Unix()
-	if _, err := stmt.Exec(t); err != nil {
-		return errors.Wrap(err, "deleting expired notifications")
-	}
-
-	return nil
 }

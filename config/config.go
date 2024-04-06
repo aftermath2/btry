@@ -64,9 +64,9 @@ type Lottery struct {
 
 // Notifier configuration.
 type Notifier struct {
-	Disable  bool     `yaml:"disable"`
 	Telegram Telegram `yaml:"telegram"`
 	Logger   Logger   `yaml:"logger"`
+	Disable  bool     `yaml:"disable"`
 }
 
 // RateLimiter configuration.

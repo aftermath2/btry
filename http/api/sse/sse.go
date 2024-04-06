@@ -158,7 +158,7 @@ func (s *streamer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // TrackPayment watches the rHash for updates to execute a certain action and returns the ID of the
 // payment.
 //
-// takes payment hashes from both invoices (in) and payments (out).
+// Takes payment hashes from both invoices (in) and payments (out).
 func (s *streamer) TrackPayment(rHash, publicKey string, amount uint64) uint64 {
 	entry := entry{
 		id:        rand.Uint64(),

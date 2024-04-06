@@ -13,7 +13,7 @@ import (
 // Notification message formats
 const (
 	AutomaticWithdrawal = "%d sats were withdrawn to %s. Preimage: %s"
-	Congratulations     = "Congratulations! You have won %d sats, your prizes expire in %d blocks."
+	Congratulations     = "Congratulations! You have won %d sats, your prizes expire at block %d."
 	welcome             = "Hello @%s! I will send you a notification if you win."
 	errInvalidMessage   = "Message not recognized. Enable notifications using `/start " +
 		"<public_key>` or scanning the QR code on BTRY's web client."

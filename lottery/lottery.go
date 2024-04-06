@@ -175,7 +175,7 @@ func (l *Lottery) raffle(block *chainrpc.BlockEpoch) error {
 	l.winnersCh <- winners
 
 	winnersMap := aggregateWinners(winners)
-	l.notifyWinners(winnersMap)
+	l.notifyWinners(block.Height, winnersMap)
 	l.tryAutoWithdrawals(block.Height, winnersMap)
 
 	return nil
@@ -195,9 +195,10 @@ func (l *Lottery) notify(publicKey, message string) {
 
 // notifyWinners sends a notification with a congratulations message to the winners if they have
 // enabled the notifications.
-func (l *Lottery) notifyWinners(winnersMap map[string]uint64) {
+func (l *Lottery) notifyWinners(blockHeight uint32, winnersMap map[string]uint64) {
+	expirationBlock := blockHeight + l.blocksDuration*5
 	for publicKey, prizes := range winnersMap {
-		message := fmt.Sprintf(notification.Congratulations, prizes, l.blocksDuration*5)
+		message := fmt.Sprintf(notification.Congratulations, prizes, expirationBlock)
 		l.notify(publicKey, message)
 	}
 }

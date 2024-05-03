@@ -163,6 +163,7 @@ func TestRaffle(t *testing.T) {
 	t.Run("Winners were sent through the channel", func(t *testing.T) {
 		go func() {
 			winners := <-winnersCh
+			notifierMock.On("PublishWinners", blockHeight, winners).Return(nil)
 			assert.Len(t, winners, len(prizes))
 		}()
 	})

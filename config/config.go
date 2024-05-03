@@ -63,9 +63,16 @@ type Lottery struct {
 	Duration uint32 `yaml:"duration"`
 }
 
+// Nostr configuration.
+type Nostr struct {
+	PrivateKey string   `yaml:"private_key"`
+	Relays     []string `yaml:"relays"`
+}
+
 // Notifier configuration.
 type Notifier struct {
 	Telegram Telegram `yaml:"telegram"`
+	Nostr    Nostr    `yaml:"nostr"`
 	Logger   Logger   `yaml:"logger"`
 	Disabled bool     `yaml:"disabled"`
 }

@@ -36,14 +36,13 @@ type telegram struct {
 	botName string
 }
 
-// NewTelegramNotifier returns a notifier that sends telegram messages.
-func NewTelegramNotifier(
-	config config.Notifier,
+func newTelegramNotifier(
+	config config.Telegram,
 	db *db.DB,
 	logger *logger.Logger,
 	torClient *http.Client,
-) (Notifier, error) {
-	botAPI, err := tg.NewBotAPIWithClient(config.Telegram.BotAPIToken, tg.APIEndpoint, torClient)
+) (*telegram, error) {
+	botAPI, err := tg.NewBotAPIWithClient(config.BotAPIToken, tg.APIEndpoint, torClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating telegram bot API")
 	}
@@ -51,7 +50,7 @@ func NewTelegramNotifier(
 	return &telegram{
 		logger:  logger,
 		botAPI:  botAPI,
-		botName: config.Telegram.BotName,
+		botName: config.BotName,
 		db:      db,
 	}, nil
 }

@@ -25,7 +25,7 @@ func (n *NotifierMock) Notify(chatID int64, message string) {
 }
 
 // PublishWinners mock.
-func (n *NotifierMock) PublishWinners(winners []db.Winner) error {
-	_ = n.Called(winners)
+func (n *NotifierMock) PublishWinners(blockHeight uint32, winners []db.Winner) error {
+	_ = n.Called(blockHeight, winners)
 	return nil
 }

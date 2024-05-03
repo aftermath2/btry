@@ -26,7 +26,7 @@ const (
 type Notifier interface {
 	GetUpdates()
 	Notify(chatID int64, message string)
-	PublishWinners(winners []db.Winner) error
+	PublishWinners(blockHeight uint32, winners []db.Winner) error
 }
 
 type notifier struct {
@@ -55,7 +55,7 @@ func NewNotifier(config config.Notifier, db *db.DB, torClient *http.Client) (Not
 	return &notifier{
 		disabled: config.Disabled,
 		telegram: telegram,
-		nostr:    &nostrc{},
+		nostr:    newNostrNotifier(config.Nostr, logger, torClient),
 	}, nil
 }
 
@@ -73,6 +73,9 @@ func (n *notifier) Notify(chatID int64, message string) {
 	n.telegram.Notify(chatID, message)
 }
 
-func (n *notifier) PublishWinners(winners []db.Winner) error {
-	return n.nostr.PublishWinners(winners)
+func (n *notifier) PublishWinners(blockHeight uint32, winners []db.Winner) error {
+	if n.disabled {
+		return nil
+	}
+	return n.nostr.PublishWinners(blockHeight, winners)
 }

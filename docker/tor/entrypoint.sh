@@ -2,17 +2,13 @@
 set -e
 
 # Create torrc if it doesn't exist
-if [ ! -f "/etc/tor/torrc" ]; then
-    cp /tmp/torrc /etc/tor/torrc
-fi
+cp -n /tmp/torrc /etc/tor/torrc
 
-# Change local user id and group
-usermod -u "${LOCAL_USER_ID:?}" alice
-groupmod -g "${LOCAL_GROUP_ID:?}" alice
+# Change local user ID to match LND's and Bitcoin's
+usermod -u "${LOCAL_USER_ID:?}" tor
 
-# Set correct owners on volumes
-chown -R tor:alice "${TOR_DATA}"
-chown -R :alice /etc/tor
-chown -R alice:alice /home/alice
+# Fix ownership
+chown -R tor /var/lib/tor
+chown -R tor /etc/tor
 
 exec sudo -u tor /usr/bin/tor

@@ -74,7 +74,7 @@ type Notifier struct {
 	Telegram Telegram `yaml:"telegram"`
 	Nostr    Nostr    `yaml:"nostr"`
 	Logger   Logger   `yaml:"logger"`
-	Disabled bool     `yaml:"disabled"`
+	Enabled  bool     `yaml:"enabled"`
 }
 
 // RateLimiter configuration.

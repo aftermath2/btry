@@ -1,6 +1,9 @@
 *.db
 btry
-btry.yaml
 btry.yml
-.env
+btry.yaml
 node_modules
+docker/volumes
+docker/tor/data
+docker/tor/config
+.env

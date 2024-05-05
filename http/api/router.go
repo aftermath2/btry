@@ -60,7 +60,7 @@ func NewRouter(
 	}
 	fs := http.FileServerFS(uiFs)
 	mux.Mount("/", fs)
-	// Temporary workaround to handle refreshes
+	// Handle single page application refreshes
 	mux.Get("/bet", redirectRoot)
 	mux.Get("/bets", redirectRoot)
 	mux.Get("/winners", redirectRoot)

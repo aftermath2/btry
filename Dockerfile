@@ -1,6 +1,6 @@
-FROM golang:1.22-alpine3.18 as builder
+FROM golang:1.22-alpine3.19 as builder
 
-RUN apk add --update --no-cache ca-certificates && update-ca-certificates
+RUN apk add --update --no-cache git nodejs npm ca-certificates && update-ca-certificates
 
 WORKDIR /app
 
@@ -10,7 +10,11 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 go build -o BTRY -ldflags="-s -w" ./main.go
+RUN npm ci --prefix ui/
+
+RUN npm run build --prefix ui/
+
+RUN CGO_ENABLED=0 go build -o BTRY -ldflags="-s -w" .
 
 # -----
 

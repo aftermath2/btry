@@ -22,7 +22,7 @@ const Footer: Component = () => {
 					</a>
 					<a
 						class={styles.logo}
-						href="http://22id55jzspf3mo5duk5z4honwhqdl7ebtmkemccknmpkniytxwqzzzyd.onion"
+						href={import.meta.env.VITE_API_URL}
 						type="button"
 						rel="noreferrer"
 					>

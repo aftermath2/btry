@@ -17,6 +17,7 @@ import (
 	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials"
 	"gopkg.in/macaroon.v2"
 )
@@ -73,6 +74,10 @@ func NewClient(config config.Lightning, torClient *http.Client) (Client, error) 
 		return nil, err
 	}
 
+	if err := waitForLND(conn, logger); err != nil {
+		return nil, err
+	}
+
 	return &client{
 		ln:        lnrpc.NewLightningClient(conn),
 		chain:     chainrpc.NewChainNotifierClient(conn),
@@ -104,10 +109,45 @@ func loadGRPCOpts(config config.Lightning) ([]grpc.DialOption, error) {
 		return nil, errors.Wrap(err, "creating macaroon credential")
 	}
 
+	connectionParams := grpc.ConnectParams{
+		Backoff: backoff.Config{
+			BaseDelay:  5 * time.Second,
+			Multiplier: 1.5,
+			MaxDelay:   time.Minute,
+		},
+		MinConnectTimeout: 30 * time.Second,
+	}
+
 	return []grpc.DialOption{
 		grpc.WithTransportCredentials(tlsCred),
 		grpc.WithPerRPCCredentials(macCred),
+		grpc.WithConnectParams(connectionParams),
 	}, nil
+}
+
+// waitForLND blocks the execution until LND is fully ready to accept calls.
+func waitForLND(conn *grpc.ClientConn, logger *logger.Logger) error {
+	stateClient := lnrpc.NewStateClient(conn)
+	stream, err := stateClient.SubscribeState(context.Background(), &lnrpc.SubscribeStateRequest{})
+	if err != nil {
+		return errors.Wrap(err, "subscribing to state")
+	}
+
+	logger.Info("Waiting for LND to be ready to accept connections...")
+
+	for {
+		wallet, err := stream.Recv()
+		if err != nil {
+			return err
+		}
+
+		if wallet.State == lnrpc.WalletState_SERVER_ACTIVE {
+			logger.Info("The LND server is now active. Initializing connections...")
+			return nil
+		}
+
+		logger.Infof("Wallet state changed to: %s", wallet.State)
+	}
 }
 
 // AddInvoice attempts to add a new invoice to the invoice database.

@@ -37,7 +37,7 @@ lottery:
     level: 1
 
 notifier:
-  disabled: false
+  enabled: false
   logger:
     label: Notifier
     out_file: notifier.log

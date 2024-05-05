@@ -32,7 +32,7 @@ type Notifier interface {
 type notifier struct {
 	telegram *telegram
 	nostr    *nostrc
-	disabled bool
+	enabled  bool
 }
 
 // NewNotifier returns a new notification sender.
@@ -42,9 +42,9 @@ func NewNotifier(config config.Notifier, db *db.DB, torClient *http.Client) (Not
 		return nil, err
 	}
 
-	if config.Disabled {
+	if !config.Enabled {
 		logger.Info("Notifier disabled")
-		return &notifier{disabled: config.Disabled}, nil
+		return &notifier{enabled: config.Enabled}, nil
 	}
 
 	telegram, err := newTelegramNotifier(config.Telegram, db, logger, torClient)
@@ -53,28 +53,28 @@ func NewNotifier(config config.Notifier, db *db.DB, torClient *http.Client) (Not
 	}
 
 	return &notifier{
-		disabled: config.Disabled,
+		enabled:  config.Enabled,
 		telegram: telegram,
 		nostr:    newNostrNotifier(config.Nostr, logger, torClient),
 	}, nil
 }
 
 func (n *notifier) GetUpdates() {
-	if n.disabled {
+	if !n.enabled {
 		return
 	}
 	n.telegram.GetUpdates()
 }
 
 func (n *notifier) Notify(chatID int64, message string) {
-	if n.disabled {
+	if !n.enabled {
 		return
 	}
 	n.telegram.Notify(chatID, message)
 }
 
 func (n *notifier) PublishWinners(blockHeight uint32, winners []db.Winner) error {
-	if n.disabled {
+	if !n.enabled {
 		return nil
 	}
 	return n.nostr.PublishWinners(blockHeight, winners)

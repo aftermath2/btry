@@ -28,8 +28,7 @@ const (
 	failed status = iota
 	success
 
-	streamID       = "events"
-	expirationTime = time.Hour * 24
+	streamID = "events"
 )
 
 var (

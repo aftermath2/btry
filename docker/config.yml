@@ -1,0 +1,67 @@
+api: 
+  logger:
+    label: API
+    out_file: logs/api.log
+    level: 2
+  rate_limiter:
+    tokens: 200
+    interval: 1m
+  sse:
+    deadline: 6h
+    logger:
+      label: SSE
+      out_file: logs/sse.log
+      level: 2
+
+db:
+  path: btry.db
+  max_idle_conns: 20
+  conn_max_idle_time: 5m
+  logger:
+    label: DB
+    out_file: logs/db.log
+    level: 2
+
+lightning:
+  rpc_address: 127.0.0.1:10009
+  logger:
+    label: LND
+    out_file: logs/lnd.log
+    level: 2
+  tls_cert_path: /.lnd/tls.cert
+  macaroon_path: /.lnd/admin.macaroon
+  max_fee_ppm: 200
+
+lottery:
+  duration: 6
+  logger:
+    label: LTRY
+    out_file: logs/lottery.log
+    level: 2
+
+notifier:
+  enabled: false
+  logger:
+    label: NTFR
+    out_file: logs/notifier.log
+    level: 2
+  telegram:
+    bot_api_token: token
+    bot_name: name
+
+server:
+  address: 0.0.0.0:21000
+  tls_certificates: []
+  timeout:
+    read: 5s
+    write: 10s
+    shutdown: 5s
+    idle: 120s
+  logger:
+    label: SRVR
+    out_file: logs/server.log
+    level: 2
+
+tor:
+  address: 127.0.0.1:9050
+  timeout: 25s

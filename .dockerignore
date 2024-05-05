@@ -1,0 +1,8 @@
+*.db
+btry
+btry.yml
+btry.yaml
+node_modules
+docker
+ui/dist
+docker-compose.yml

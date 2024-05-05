@@ -2,17 +2,13 @@
 set -e
 
 # Create lnd.conf if it doesn't exist
-if [ ! -f "/home/lnd/.lnd/lnd.conf" ]; then
-    envsubst < /tmp/lnd.conf > /home/lnd/.lnd/lnd.conf
-fi
+cp -n /tmp/lnd.conf /home/lnd/.lnd/lnd.conf
 
-# Change local user id and group
-usermod -u "${LOCAL_USER_ID:?}" lnd
-groupmod -g "${LOCAL_GROUP_ID:?}" lnd
+# Store test password
+echo ${AUTO_UNLOCK_PASSWORD} > /tmp/pwd
 
 # Fix ownership
 chown -R lnd /home/lnd
-echo ${AUTO_UNLOCK_PWD} > /tmp/pwd
 
 # Start lnd
 exec sudo -u lnd "$@"

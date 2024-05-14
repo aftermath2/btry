@@ -28,8 +28,8 @@ lightning:
     label: LND
     out_file: logs/lnd.log
     level: 2
-  tls_cert_path: /.lnd/tls.cert
-  macaroon_path: /.lnd/admin.macaroon
+  tls_cert_path: /home/lnd/.lnd/tls.cert
+  macaroon_path: /home/lnd/.lnd/data/chain/bitcoin/testnet/admin.macaroon
   max_fee_ppm: 200
 
 lottery:

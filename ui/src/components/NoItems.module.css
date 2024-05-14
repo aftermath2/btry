@@ -4,9 +4,24 @@
 	align-items: center;
 	min-height: 200px;
 	min-width: 400px;
+	height: 100%;
 }
 
 .text {
 	margin: 0;
 	font-weight: 600;
+}
+
+/* Media query */
+@media (max-width: 525px) {
+	.container {
+		min-width: 308px;
+	}
+}
+
+@media (max-width: 400px) {
+	.container {
+		flex: none;
+		min-width: 250px;
+	}
 }

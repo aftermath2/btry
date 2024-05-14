@@ -56,17 +56,28 @@ const Table: Component<Props> = (props) => {
 			<thead class={styles.header}>
 				<For each={props.headers}>
 					{(header, i) => (
-						<th class={styles.title} style={{ "text-align": i() === props.headers.length - 1 ? "right" : "left" }}>{header}</th>
+						<th
+							class={styles.title}
+							style={{
+								"text-align": i() === props.headers.length - 1 ? "right" : "left",
+								padding: i() === 0 ? "0 1vw 0 0" : i() === 1 ? "0 1vw" : "0 0 0 1vw",
+							}}
+						>
+							{header}
+						</th>
 					)}
 				</For>
 			</thead>
 			<tbody class={styles.rows}>
 				<For each={rows()}>
-					{(row, _) => (
-						<tr class={styles.row}>
-							<td class={styles.text}>{BeautifyNumber(row.num)}</td>
-							<td class={styles.text}>{row.nickname}</td>
-							<td class={styles.text}><Sats num={row.sats} align="right" /></td>
+					{(row, i) => (
+						<tr
+							class={styles.row}
+							style={{ border: i() === rows().length - 1 ? "none" : "" }}
+						>
+							<td class={styles.text_left}>{BeautifyNumber(row.num)}</td>
+							<td class={styles.text_center}>{row.nickname}</td>
+							<td class={styles.text_right}><Sats num={row.sats} align="right" /></td>
 						</tr>
 					)}
 				</For>

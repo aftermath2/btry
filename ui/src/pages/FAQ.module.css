@@ -1,13 +1,12 @@
 .question {
 	color: var(--white);
-	font-size: 1.375rem;
+	font-size: 1.3rem;
 	font-weight: 700;
 	margin: 0 0 10px 0;
 }
 
 .answer {
 	color: var(--fog);
-	font-size: 1.125rem;
 	margin: 0;
 	white-space: pre-wrap;
 	word-break: break-word;
@@ -16,11 +15,4 @@
 
 .space {
 	line-height: 30px;
-}
-
-/* Media query */
-@media (max-width: 1000px) {
-	.answer {
-		font-size: 1rem;
-	}
 }

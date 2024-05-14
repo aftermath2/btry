@@ -84,8 +84,6 @@ const List: Component<Props> = (props) => {
 			<Box
 				title={t(props.itemsName)}
 				align="justify-between"
-				minWidth="18vw"
-				padding="25px"
 				margin="0"
 				titleFontSize="1.3rem"
 				titleHref={props.hideTitleLink ? undefined : `/${props.itemsName}`}

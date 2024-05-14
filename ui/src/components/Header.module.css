@@ -12,14 +12,17 @@
 	justify-content: center;
 	align-items: center;
 	color: var(--white);
-	min-width: 50%;
+	min-width: 54%;
 	flex-wrap: wrap;
 }
 
 .brand {
 	display: flex;
 	flex: 1;
-	font-weight: 700;
+}
+
+.home {
+	display: flex;
 	align-items: center;
 	gap: 10px;
 }
@@ -29,17 +32,29 @@
 	height: 32px;
 }
 
+.name {
+	margin: 0px;
+	font-weight: 700;
+}
+
 .pages {
 	display: inline-flex;
 	flex: 1;
+	height: 100%;
 	justify-content: space-evenly;
 	font-weight: 600;
-	margin: 0 20px;
+	margin: 0px 10px;
 }
 
 .link {
-	margin: 0px 5px;
+	margin: 0px 10px;
 	text-transform: uppercase;
+	align-content: center;
+	height: 95%;
+}
+
+.link:hover {
+	color: rgba(241, 241, 241, 0.6);
 }
 
 .dropdown {
@@ -58,6 +73,14 @@
 	border-radius: 5px;
 	cursor: pointer;
 	gap: 3px;
+}
+
+.box:hover {
+	background-color: rgba(115, 115, 115, 0.1);
+}
+
+.box:active {
+	transform: scale(0.98);
 }
 
 .nickname {
@@ -89,12 +112,11 @@
 		flex-direction: column;
 		justify-content: space-around;
 		align-items: center;
-		gap: 1rem;
-		padding: 8px 0;
+		padding: 10px 0;
 	}
 
 	.pages {
-		margin: 0;
+		margin: 15px 0;
 	}
 
 	.link {

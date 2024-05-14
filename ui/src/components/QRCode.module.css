@@ -3,6 +3,9 @@
 	height: 300px;
 	background-color: white;
 	color: black;
+	align-items: center;
+	justify-content: center;
+	flex: 1;
 }
 
 /* Media query */

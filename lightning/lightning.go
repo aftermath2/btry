@@ -59,17 +59,19 @@ type client struct {
 
 // NewClient returns a new client that communicates with a Lightning node.
 func NewClient(config config.Lightning, torClient *http.Client) (Client, error) {
-	opts, err := loadGRPCOpts(config)
-	if err != nil {
-		return nil, errors.Wrap(err, "loading grpc options")
-	}
-
-	conn, err := grpc.NewClient(config.RPCAddress, opts...)
+	logger, err := logger.New(config.Logger)
 	if err != nil {
 		return nil, err
 	}
 
-	logger, err := logger.New(config.Logger)
+	opts, err := loadGRPCOpts(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "loading gRPC options")
+	}
+
+	logger.Infof("Opening gRPC connection to %s...", config.RPCAddress)
+
+	conn, err := grpc.NewClient(config.RPCAddress, opts...)
 	if err != nil {
 		return nil, err
 	}

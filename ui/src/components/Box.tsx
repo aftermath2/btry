@@ -1,7 +1,7 @@
 import { Component, JSX, Show } from "solid-js";
+import { A } from "@solidjs/router";
 
 import styles from "./Box.module.css";
-import { A } from "@solidjs/router";
 
 interface Props {
 	title?: string
@@ -39,8 +39,10 @@ const Box: Component<Props> = (props) => {
 						style={{
 							"font-size": props.titleFontSize,
 							margin: props.titleMargin
-						}}>{props.title}
-					</p>}>
+						}}>
+						{props.title}
+					</p>}
+				>
 					<A href={props.titleHref || ""} class={styles.title_link}
 						style={{
 							"font-size": props.titleFontSize,

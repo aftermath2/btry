@@ -5,7 +5,6 @@ import styles from "./QRCode.module.css"
 
 interface Props {
 	value: string
-	size?: number
 }
 
 const QRCode: Component<Props> = (props) => {

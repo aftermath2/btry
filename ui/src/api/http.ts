@@ -9,7 +9,7 @@ export interface Req {
 }
 
 export interface ReqWithBody extends Req {
-	body?: BodyInit
+	body?: string
 }
 
 enum Status {
@@ -71,6 +71,7 @@ export class HTTP {
 			headers: {
 				"Accept": "application/json",
 				"Content-Type": "application/json; charset=UTF-8",
+				"Content-Length": req.body?.length.toString() || "0",
 				...(req.headers),
 			},
 		})
@@ -92,6 +93,7 @@ export class HTTP {
 			headers: {
 				"Accept": "application/json",
 				"Content-Type": "application/json; charset=UTF-8",
+				"Content-Length": req.body?.length.toString() || "0",
 				...(req.headers),
 			},
 		})

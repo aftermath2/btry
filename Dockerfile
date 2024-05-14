@@ -12,7 +12,7 @@ COPY . .
 
 RUN npm ci --prefix ui/
 
-RUN npm run build --prefix ui/
+RUN npm run build_dev --prefix ui/
 
 RUN CGO_ENABLED=0 go build -o BTRY -ldflags="-s -w" .
 
